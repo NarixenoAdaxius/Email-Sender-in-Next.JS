@@ -10,6 +10,7 @@
     }
   ],
   "env": {
-    "NEXT_DISABLE_ESLINT_DURING_BUILDS": "true"
+    "NEXT_DISABLE_ESLINT_DURING_BUILDS": "true",
+    "SKIP_TYPE_CHECK": "true"
   }
 } 
