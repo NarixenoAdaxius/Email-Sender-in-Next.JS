@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="30" r="29" stroke="#DAA520" stroke-width="2"/>
+  <path d="M20 45L30 15L40 45" stroke="#DAA520" stroke-width="2"/>
+  <path d="M23 35H37" stroke="#DAA520" stroke-width="2"/>
+  <text x="30" y="56" text-anchor="middle" font-family="Arial" font-size="8" fill="#DAA520">ALPHA</text>
+</svg> 
