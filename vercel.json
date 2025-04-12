@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "buildCommand": "npm run build:vercel"
+      }
+    }
+  ],
+  "env": {
+    "NEXT_DISABLE_ESLINT_DURING_BUILDS": "true"
+  }
+} 
