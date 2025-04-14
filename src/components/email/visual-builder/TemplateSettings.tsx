@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { VisualTemplate } from './types';
 
 interface TemplateSettingsProps {
@@ -9,6 +9,19 @@ interface TemplateSettingsProps {
 }
 
 export function TemplateSettings({ template, onChange }: TemplateSettingsProps) {
+  const [errors, setErrors] = useState<Record<string, boolean>>({
+    name: false,
+    subject: false
+  });
+
+  useEffect(() => {
+    // Update error states when template changes
+    setErrors({
+      name: template.name.trim() === '',
+      subject: template.subject.trim() === ''
+    });
+  }, [template.name, template.subject]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     onChange({ [name]: value });
@@ -23,8 +36,11 @@ export function TemplateSettings({ template, onChange }: TemplateSettingsProps) 
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <div className="space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Template Name
+          <label htmlFor="name" className="flex items-center text-sm font-medium text-gray-700">
+            Template Name <span className="ml-1 text-red-500">*</span>
+            {errors.name && (
+              <span className="ml-2 text-xs text-red-500">Required</span>
+            )}
           </label>
           <input
             type="text"
@@ -32,7 +48,11 @@ export function TemplateSettings({ template, onChange }: TemplateSettingsProps) 
             name="name"
             value={template.name}
             onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-primary ${
+              errors.name 
+                ? 'border-red-300 focus:border-red-500' 
+                : 'border-gray-300 focus:border-primary'
+            }`}
             placeholder="e.g., Welcome Email"
             required
           />
@@ -50,13 +70,15 @@ export function TemplateSettings({ template, onChange }: TemplateSettingsProps) 
             rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
             placeholder="Brief description of this template"
-            required
           />
         </div>
         
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
-            Email Subject
+          <label htmlFor="subject" className="flex items-center text-sm font-medium text-gray-700">
+            Email Subject <span className="ml-1 text-red-500">*</span>
+            {errors.subject && (
+              <span className="ml-2 text-xs text-red-500">Required</span>
+            )}
           </label>
           <input
             type="text"
@@ -64,7 +86,11 @@ export function TemplateSettings({ template, onChange }: TemplateSettingsProps) 
             name="subject"
             value={template.subject}
             onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-primary ${
+              errors.subject 
+                ? 'border-red-300 focus:border-red-500' 
+                : 'border-gray-300 focus:border-primary'
+            }`}
             placeholder="e.g., Welcome to Our Service!"
             required
           />
@@ -123,6 +149,15 @@ export function TemplateSettings({ template, onChange }: TemplateSettingsProps) 
               Note: <span className="font-medium">senderName</span> is automatically included and will be used as the "From" name in emails.
             </p>
           </div>
+        </div>
+        
+        <div className="mt-4 rounded-md bg-blue-50 p-3 border border-blue-200">
+          <h3 className="text-sm font-medium text-blue-800">Template Requirements</h3>
+          <ul className="mt-2 text-xs text-blue-700 space-y-1 list-disc list-inside">
+            <li>Fields marked with <span className="text-red-500">*</span> are required</li>
+            <li>At least one content block must be added to create a template</li>
+            <li>The template will be available in your Templates dashboard after creation</li>
+          </ul>
         </div>
       </div>
     </div>

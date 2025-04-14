@@ -158,6 +158,26 @@ export function VisualTemplateBuilder({ templateId, onSave }: VisualTemplateBuil
 
   // Save the template
   const handleSave = async () => {
+    // Validate required fields
+    const errors: string[] = [];
+    
+    if (!template.name.trim()) {
+      errors.push('Template Name is required');
+    }
+    
+    if (!template.subject.trim()) {
+      errors.push('Email Subject is required');
+    }
+    
+    if (template.blocks.length === 0) {
+      errors.push('At least one content block is required');
+    }
+    
+    if (errors.length > 0) {
+      errors.forEach(error => toast.error(error));
+      return;
+    }
+    
     try {
       setIsSaving(true);
       
@@ -211,6 +231,14 @@ export function VisualTemplateBuilder({ templateId, onSave }: VisualTemplateBuil
     }
   };
 
+  // Check if form is valid
+  const isFormValid = () => {
+    return template.name.trim() !== '' && 
+           template.subject.trim() !== '' && 
+           template.blocks.length > 0;
+  };
+
+  // Return loading UI
   if (isLoading) {
     return <div className="flex justify-center p-6">Loading template...</div>;
   }
@@ -238,6 +266,13 @@ export function VisualTemplateBuilder({ templateId, onSave }: VisualTemplateBuil
               onMoveBlock={moveBlock}
               onRemoveBlock={removeBlock}
             />
+            
+            {template.blocks.length === 0 && (
+              <div className="mt-4 rounded-md bg-yellow-50 p-3 border border-yellow-200 text-sm text-yellow-800">
+                <p className="font-medium">No content blocks added</p>
+                <p className="mt-1 text-xs">Use the content block options above to add elements to your template.</p>
+              </div>
+            )}
           </div>
           
           {/* Block editor panel */}
@@ -251,22 +286,41 @@ export function VisualTemplateBuilder({ templateId, onSave }: VisualTemplateBuil
         </div>
       </div>
       
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving}
-          className="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-        >
-          {isSaving ? 'Saving...' : templateId ? 'Update Template' : 'Create Template'}
-        </button>
+      <div className="flex justify-between">
+        <div className="flex items-center">
+          {!isFormValid() && (
+            <div className="text-sm text-red-500 mr-3">
+              <span className="font-medium">Please fix the following:</span>
+              <ul className="list-disc list-inside text-xs mt-1">
+                {template.name.trim() === '' && <li>Template name is required</li>}
+                {template.subject.trim() === '' && <li>Email subject is required</li>}
+                {template.blocks.length === 0 && <li>Add at least one content block</li>}
+              </ul>
+            </div>
+          )}
+        </div>
+      
+        <div className="flex space-x-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || !isFormValid()}
+            className={`inline-flex justify-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isFormValid()
+                ? 'border-transparent bg-primary text-white hover:bg-primary-dark focus:ring-primary'
+                : 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            {isSaving ? 'Saving...' : templateId ? 'Update Template' : 'Create Template'}
+          </button>
+        </div>
       </div>
     </div>
   );
