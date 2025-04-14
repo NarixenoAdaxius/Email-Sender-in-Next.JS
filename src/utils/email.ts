@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import { EmailTemplate } from '@/lib/email-templates';
 import User from '@/models/User';
 import EmailHistory from '@/models/EmailHistory';
-import { compileTemplate } from '@/lib/email-templates';
+import { compileTemplate, getTemplateByIdWithDb } from '@/lib/email-templates';
 import mongoose from 'mongoose';
 
 // Get email configuration from environment variables
@@ -33,22 +33,30 @@ interface SendEmailParams {
   templateId: string;
   variables: Record<string, string>;
   recipients: string[];
+  template?: EmailTemplate; // Optional template object to avoid fetching again
 }
 
 /**
  * Send an email using a template and save to email history
  */
-export async function sendEmail({ userId, templateId, variables, recipients }: SendEmailParams): Promise<{ success: boolean; message: string }> {
+export async function sendEmail({ userId, templateId, variables, recipients, template }: SendEmailParams): Promise<{ success: boolean; message: string }> {
   try {
     // Get the email template
-    const { subject, html } = await getCompiledTemplate(templateId, variables);
+    const compiledTemplate = template 
+      ? compileTemplate(template, variables)
+      : await getCompiledTemplate(templateId, variables);
+    
+    const { subject, html } = compiledTemplate;
     
     // Create transporter
     const transporter = createTransporter();
     
+    // Use senderName in the From field if available
+    const senderName = variables.senderName || 'Email Sender';
+    
     // Send mail
     const info = await transporter.sendMail({
-      from: `"Email Sender" <${EMAIL_USER}>`,
+      from: `"${senderName}" <${EMAIL_USER}>`,
       to: recipients.join(', '),
       subject,
       html,
@@ -97,10 +105,7 @@ export async function sendEmail({ userId, templateId, variables, recipients }: S
  * Get a compiled template with variables replaced
  */
 async function getCompiledTemplate(templateId: string, variables: Record<string, string>): Promise<{ subject: string; html: string }> {
-  // Import dynamically to avoid circular dependencies
-  const { getTemplateById } = await import('@/lib/email-templates');
-  
-  const template = getTemplateById(templateId);
+  const template = await getTemplateByIdWithDb(templateId);
   
   if (!template) {
     throw new Error(`Template with ID ${templateId} not found`);

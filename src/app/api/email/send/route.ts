@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
+import dbConnect from '@/lib/dbConnect';
 import { getUserFromRequest } from '@/lib/auth';
 import { sendEmail } from '@/utils/email';
 import { emailSendSchema } from '@/utils/validation';
-import { getTemplateById } from '@/lib/email-templates';
+import { getTemplateByIdWithDb } from '@/lib/email-templates';
 import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
     // Connect to DB
-    await connectDB();
+    await dbConnect();
     
     // Check authentication
     const user = getUserFromRequest(request);
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Get template to validate required variables
-    const template = getTemplateById(body.templateId);
+    const template = await getTemplateByIdWithDb(body.templateId);
     if (!template) {
       return NextResponse.json(
         { error: 'Template not found' },
@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       templateId,
       variables,
       recipients,
+      template // Pass the full template to avoid fetching it again
     });
     
     if (!result.success) {

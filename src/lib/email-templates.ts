@@ -68,6 +68,10 @@ const emailTemplates: EmailTemplate[] = [
             <p>Your account has been created successfully with the email: {{email}}</p>
             <p>If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
             <a href="{{loginLink}}" class="button">Login to Your Account</a>
+            <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+              Best regards,<br>
+              {{senderName}}
+            </p>
           </div>
           <div class="footer">
             <p>&copy; 2023 Our Company. All rights reserved.</p>
@@ -77,7 +81,7 @@ const emailTemplates: EmailTemplate[] = [
       </body>
       </html>
     `,
-    variables: ['name', 'email', 'loginLink'],
+    variables: ['name', 'email', 'loginLink', 'senderName'],
   },
   {
     id: 'newsletter',
@@ -149,6 +153,10 @@ const emailTemplates: EmailTemplate[] = [
             </div>
             
             <p>Thank you for your continued support!</p>
+            <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+              Best regards,<br>
+              {{senderName}}
+            </p>
           </div>
           <div class="footer">
             <p>&copy; 2023 Our Company. All rights reserved.</p>
@@ -159,7 +167,7 @@ const emailTemplates: EmailTemplate[] = [
       </body>
       </html>
     `,
-    variables: ['name', 'month', 'headline1', 'content1', 'headline2', 'content2', 'headline3', 'content3', 'unsubscribeLink'],
+    variables: ['name', 'month', 'headline1', 'content1', 'headline2', 'content2', 'headline3', 'content3', 'unsubscribeLink', 'senderName'],
   },
   {
     id: 'password-reset',
@@ -221,6 +229,10 @@ const emailTemplates: EmailTemplate[] = [
             <a href="{{resetLink}}" class="button">Reset Password</a>
             <p>If you didn't request a password reset, you can ignore this email.</p>
             <p>This link will expire in 1 hour for security reasons.</p>
+            <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+              Best regards,<br>
+              {{senderName}}
+            </p>
           </div>
           <div class="footer">
             <p>&copy; 2023 Our Company. All rights reserved.</p>
@@ -229,7 +241,7 @@ const emailTemplates: EmailTemplate[] = [
       </body>
       </html>
     `,
-    variables: ['name', 'resetLink'],
+    variables: ['name', 'resetLink', 'senderName'],
   },
   {
     id: 'interview-invitation',
@@ -462,7 +474,8 @@ const emailTemplates: EmailTemplate[] = [
       'departmentName',
       'logoLink',
       'contactPhone',
-      'contactEmail'
+      'contactEmail',
+      'senderName'
     ],
   },
 ];
@@ -471,6 +484,10 @@ export function getTemplates(): EmailTemplate[] {
   return emailTemplates;
 }
 
+/**
+ * Get a template by ID, checking only predefined templates
+ * Note: For custom templates from the database, use getTemplateByIdWithDb instead
+ */
 export function getTemplateById(id: string): EmailTemplate | undefined {
   const template = emailTemplates.find(template => template.id === id);
   
@@ -496,6 +513,47 @@ export function getTemplateById(id: string): EmailTemplate | undefined {
   }
   
   return template;
+}
+
+/**
+ * Get a template by ID, checking both predefined templates and the database
+ * This should be used when needing to find a template for email sending
+ */
+export async function getTemplateByIdWithDb(id: string): Promise<EmailTemplate | null> {
+  try {
+    // First try predefined templates
+    const predefinedTemplate = getTemplateById(id);
+    if (predefinedTemplate) {
+      return predefinedTemplate;
+    }
+    
+    // If not found in predefined templates, try database
+    // Import dynamically to avoid circular dependencies
+    const { default: EmailTemplateModel } = await import('@/models/EmailTemplate');
+    const { default: dbConnect } = await import('@/lib/dbConnect');
+    
+    // Connect to database
+    await dbConnect();
+    
+    // Find template in database
+    const dbTemplate = await EmailTemplateModel.findById(id);
+    if (!dbTemplate) {
+      return null;
+    }
+    
+    // Convert Mongoose document to plain object
+    const template = dbTemplate.toObject ? dbTemplate.toObject() : dbTemplate;
+    
+    // Add id property for consistency
+    if (template._id && !template.id) {
+      template.id = template._id.toString();
+    }
+    
+    return template as EmailTemplate;
+  } catch (error) {
+    console.error('Error fetching template:', error);
+    return null;
+  }
 }
 
 /**

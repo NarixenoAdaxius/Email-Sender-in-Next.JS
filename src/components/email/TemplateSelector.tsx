@@ -43,6 +43,15 @@ export default function TemplateSelector({ onSelect, selectedTemplateId }: Templ
     onSelect(template);
   };
 
+  // Helper function to get template ID - handles both predefined templates (id) and custom templates (_id)
+  const getTemplateId = (template: any) => template.id || template._id;
+  
+  // Helper function to check if a template is selected
+  const isTemplateSelected = (template: any) => {
+    const id = getTemplateId(template);
+    return selectedTemplateId === id;
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-6">Loading templates...</div>;
   }
@@ -65,9 +74,9 @@ export default function TemplateSelector({ onSelect, selectedTemplateId }: Templ
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {templates.map((template) => (
         <div
-          key={template.id}
+          key={getTemplateId(template)}
           className={`cursor-pointer rounded-lg border p-4 transition-colors hover:border-primary ${
-            selectedTemplateId === template.id
+            isTemplateSelected(template)
               ? 'border-2 border-primary bg-primary/5'
               : 'border-gray-200'
           }`}
@@ -81,7 +90,7 @@ export default function TemplateSelector({ onSelect, selectedTemplateId }: Templ
             <div className="mt-1 flex flex-wrap gap-1">
               {template.variables.map((variable) => (
                 <span
-                  key={variable}
+                  key={`${getTemplateId(template)}-${variable}`}
                   className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs"
                 >
                   {variable}

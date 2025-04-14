@@ -15,9 +15,10 @@ import { EmailTemplate } from '@/lib/email-templates';
 interface ContentEditorProps {
   template: EmailTemplate;
   onSend: (templateId: string, variables: Record<string, string>, recipients: string[]) => Promise<void>;
+  onVariablesChange?: (variables: Record<string, string>) => void;
 }
 
-export default function ContentEditor({ template, onSend }: ContentEditorProps) {
+export default function ContentEditor({ template, onSend, onVariablesChange }: ContentEditorProps) {
   // Dynamically create a schema based on the template variables
   const createFormSchema = () => {
     // Create a schema map for our form
@@ -65,6 +66,24 @@ export default function ContentEditor({ template, onSend }: ContentEditorProps) 
   useEffect(() => {
     form.reset(createDefaultValues());
   }, [template.id]);
+  
+  // Update the parent component with current variables when values change
+  useEffect(() => {
+    if (onVariablesChange) {
+      const subscription = form.watch((value) => {
+        // Extract just the variables (exclude recipients)
+        const { recipients, ...variables } = value;
+        // Only send defined values
+        const definedVariables = Object.fromEntries(
+          Object.entries(variables).filter(([_, val]) => val !== undefined)
+        ) as Record<string, string>;
+        
+        onVariablesChange(definedVariables);
+      });
+      
+      return () => subscription.unsubscribe();
+    }
+  }, [form, onVariablesChange]);
   
   const onSubmit = async (data: FormValues) => {
     try {
@@ -126,7 +145,14 @@ export default function ContentEditor({ template, onSend }: ContentEditorProps) 
                 name={variable as any}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="capitalize">{variable.replace(/([A-Z])/g, ' $1')}</FormLabel>
+                    <FormLabel className="capitalize">
+                      {variable.replace(/([A-Z])/g, ' $1')}
+                      {variable === 'senderName' && (
+                        <span className="ml-2 text-xs text-blue-500 font-normal">
+                          (Also used in the "From" field)
+                        </span>
+                      )}
+                    </FormLabel>
                     <FormControl>
                       {isLongContent ? (
                         <Textarea 

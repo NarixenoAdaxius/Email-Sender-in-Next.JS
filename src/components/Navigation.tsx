@@ -3,15 +3,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
+import { useToast } from '@/components/ui/use-toast';
 
 interface User {
   id: string;
   name: string;
   email: string;
+  profilePicture: string | null;
 }
 
 export default function Navigation() {
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -46,12 +48,19 @@ export default function Navigation() {
       });
       
       if (response.ok) {
-        toast.success('Logged out successfully');
+        toast({
+          title: "Success", 
+          description: 'Logged out successfully'
+        });
         setUser(null);
         router.push('/login');
       }
     } catch (error) {
-      toast.error('Failed to logout');
+      toast({
+        title: "Error", 
+        description: 'Failed to logout',
+        variant: "destructive"
+      });
     }
   };
   
@@ -59,6 +68,7 @@ export default function Navigation() {
   const navLinks = user
     ? [
         { href: '/dashboard', label: 'Dashboard' },
+        { href: '/dashboard/templates', label: 'Email Templates' },
       ]
     : [
         { href: '/login', label: 'Login' },
@@ -100,9 +110,17 @@ export default function Navigation() {
                 className="flex items-center space-x-2 rounded-full text-sm focus:outline-none"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
+                {user.profilePicture ? (
+                  <img 
+                    src={user.profilePicture} 
+                    alt={user.name} 
+                    className="h-8 w-8 rounded-full object-cover" 
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
                 <span className="font-medium text-gray-700">{user.name}</span>
               </button>
               
@@ -112,6 +130,13 @@ export default function Navigation() {
                     <div className="font-medium">{user.name}</div>
                     <div className="text-xs text-gray-500">{user.email}</div>
                   </div>
+                  <Link
+                    href="/dashboard/profile"
+                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Profile Settings
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
@@ -195,15 +220,24 @@ export default function Navigation() {
             ))}
             
             {user && (
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setIsMenuOpen(false);
-                }}
-                className="block w-full px-3 py-2 text-left text-base font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Logout
-              </button>
+              <>
+                <Link
+                  href="/dashboard/profile"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Profile Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full px-3 py-2 text-left text-base font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Logout
+                </button>
+              </>
             )}
           </div>
         </div>

@@ -22,6 +22,14 @@ export default function EmailSender() {
     setVariables(defaultVariables);
   };
 
+  const handleVariablesChange = (newVariables: Record<string, string>) => {
+    // Update variables state as user types in the form
+    setVariables(prev => ({
+      ...prev,
+      ...newVariables
+    }));
+  };
+
   const handleSendEmail = async (
     templateId: string, 
     contentVariables: Record<string, string>, 
@@ -113,6 +121,7 @@ export default function EmailSender() {
             <ContentEditor
               template={selectedTemplate}
               onSend={handleSendEmail}
+              onVariablesChange={handleVariablesChange}
             />
             <button
               className="mt-4 text-sm text-blue-500 hover:underline"

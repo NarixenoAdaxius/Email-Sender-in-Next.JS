@@ -9,10 +9,12 @@ const protectedRoutes = [
   '/contacts',
   '/history',
   '/settings',
+  '/profile',
   '/api/templates',
   '/api/contacts',
   '/api/users',
   '/api/emails',
+  '/api/user',
 ];
 
 export async function middleware(request: NextRequest) {

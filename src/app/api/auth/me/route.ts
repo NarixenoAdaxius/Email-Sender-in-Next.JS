@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
 import User from '@/models/User';
+import UserProfile from '@/models/UserProfile';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,12 +28,16 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Get user profile to access profile picture
+    const userProfile = await UserProfile.findOne({ userId: user._id });
     
     return NextResponse.json({ 
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        profilePicture: userProfile?.profilePicture || null
       } 
     });
   } catch (error: any) {
