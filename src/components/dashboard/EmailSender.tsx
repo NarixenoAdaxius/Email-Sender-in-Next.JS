@@ -12,10 +12,12 @@ export default function EmailSender() {
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleTemplateSelect = (template: EmailTemplate) => {
     setSelectedTemplate(template);
     setError(null);
+    setSuccess(null);
     // Reset variables when template changes
     const defaultVariables: Record<string, string> = {};
     template.variables.forEach(v => defaultVariables[v] = template.defaultValues?.[v] || '');
@@ -36,6 +38,7 @@ export default function EmailSender() {
     recipients: string[]
   ) => {
     setError(null);
+    setSuccess(null);
     try {
       setIsLoading(true);
       
@@ -80,16 +83,29 @@ export default function EmailSender() {
           throw new Error(`Missing variables: ${result.missingVariables.join(', ')}`);
         }
         
-        throw new Error(result.error || 'Failed to send email');
+        throw new Error(result.error || `Failed to send email: ${response.status} ${response.statusText}`);
       }
       
-      toast.success('Email sent successfully!');
+      const successMessage = `Email sent successfully to ${recipients.join(', ')}!`;
+      setSuccess(successMessage);
+      toast.success(successMessage);
       setVariables(contentVariables);
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to send email';
       setError(errorMessage);
       toast.error(errorMessage);
       console.error('Send email error:', error);
+      
+      // Try to get more diagnostic information
+      try {
+        const diagnosticResponse = await fetch('/api/debug/env');
+        if (diagnosticResponse.ok) {
+          const diagnosticData = await diagnosticResponse.json();
+          console.log('Email environment diagnostic:', diagnosticData);
+        }
+      } catch (diagError) {
+        // Silently handle diagnostic errors
+      }
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +119,13 @@ export default function EmailSender() {
         <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-300 text-red-700">
           <h3 className="font-semibold mb-1">Error sending email:</h3>
           <p>{error}</p>
+        </div>
+      )}
+      
+      {success && (
+        <div className="mb-6 p-4 rounded-md bg-green-50 border border-green-300 text-green-700">
+          <h3 className="font-semibold mb-1">Success!</h3>
+          <p>{success}</p>
         </div>
       )}
       

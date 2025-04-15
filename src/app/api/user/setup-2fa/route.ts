@@ -3,27 +3,8 @@ import connectDB from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
 import User from '@/models/User';
 import SecuritySettings from '@/models/SecuritySettings';
-import crypto from 'crypto';
-import qrcode from 'qrcode';
-
-// Helper function to generate a random secret
-function generateSecret() {
-  const secret = crypto.randomBytes(20).toString('hex');
-  return secret;
-}
-
-// Helper function to generate a QR code URL
-async function generateQrCode(email: string, secret: string) {
-  const otpauthUrl = `otpauth://totp/EmailSender:${email}?secret=${secret}&issuer=EmailSender`;
-  
-  try {
-    const qrCodeUrl = await qrcode.toDataURL(otpauthUrl);
-    return qrCodeUrl;
-  } catch (error) {
-    console.error('Error generating QR code:', error);
-    throw new Error('Failed to generate QR code');
-  }
-}
+import speakeasy from 'speakeasy';
+import QRCode from 'qrcode';
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,10 +32,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Generate a new secret
-    const secret = generateSecret();
-    
-    // Generate QR code
-    const qrCode = await generateQrCode(user.email, secret);
+    const secret = speakeasy.generateSecret({
+      name: `Email Sender App (${user.email})`,
+      length: 20
+    });
     
     // Find or create security settings
     let securitySettings = await SecuritySettings.findOne({ userId: user._id });
@@ -63,14 +44,18 @@ export async function POST(request: NextRequest) {
       securitySettings = new SecuritySettings({ userId: user._id });
     }
     
-    // Store the secret temporarily
-    securitySettings.twoFactorSecret = secret;
+    // Store the secret temporarily (not yet verified)
+    securitySettings.twoFactorSecret = secret.base32;
     await securitySettings.save();
     
+    // Generate QR code
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url as string);
+    
     return NextResponse.json({ 
-      success: true,
-      qrCode,
-      secret
+      success: true, 
+      qrCode: qrCodeUrl,
+      secret: secret.base32,
+      message: 'Two-factor authentication setup initiated' 
     });
   } catch (error: any) {
     console.error('Error setting up 2FA:', error);

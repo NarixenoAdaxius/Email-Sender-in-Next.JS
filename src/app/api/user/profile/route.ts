@@ -3,7 +3,6 @@ import connectDB from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
 import User from '@/models/User';
 import UserProfile from '@/models/UserProfile';
-import mongoose from 'mongoose';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Find the user
-    const user = await User.findById(userPayload.id).select('-password');
+    const user = await User.findById(userPayload.id).select('name email');
     
     if (!user) {
       return NextResponse.json(
@@ -30,36 +29,33 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Find or create user profile
+    // Find user profile
     let userProfile = await UserProfile.findOne({ userId: user._id });
     
     if (!userProfile) {
-      // Create a new profile if it doesn't exist
+      // Create default profile if none exists
       userProfile = await UserProfile.create({
         userId: user._id,
-        // Default values are defined in the schema
+        // Default values defined in schema
       });
     }
     
-    // Combine user and profile data
-    const profileData = {
-      id: user._id.toString(),
+    // Return combined user and profile data
+    return NextResponse.json({
       name: user.name,
       email: user.email,
+      jobTitle: userProfile.jobTitle || '',
       company: userProfile.company || '',
       location: userProfile.location || '',
       phone: userProfile.phone || '',
-      jobTitle: userProfile.jobTitle || '',
       bio: userProfile.bio || '',
-      profilePicture: userProfile.profilePicture || null,
-      timezone: userProfile.timezone || 'UTC+00:00',
-    };
-    
-    return NextResponse.json({ profile: profileData });
+      profilePicture: userProfile.profilePicture || '',
+      timezone: userProfile.timezone || 'UTC+00:00'
+    });
   } catch (error: any) {
-    console.error('Error fetching profile:', error);
+    console.error('Error fetching user profile:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch profile' },
+      { error: error.message || 'Failed to fetch user profile' },
       { status: 500 }
     );
   }
@@ -92,10 +88,11 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    // Update basic user data
-    if (data.name) user.name = data.name;
-    if (data.email) user.email = data.email;
-    await user.save();
+    // Update name in user model
+    if (data.name) {
+      user.name = data.name;
+      await user.save();
+    }
     
     // Find or create user profile
     let userProfile = await UserProfile.findOne({ userId: user._id });
@@ -105,37 +102,42 @@ export async function PUT(request: NextRequest) {
     }
     
     // Update profile fields
-    if (data.jobTitle !== undefined) userProfile.jobTitle = data.jobTitle;
-    if (data.company !== undefined) userProfile.company = data.company;
-    if (data.location !== undefined) userProfile.location = data.location;
-    if (data.phone !== undefined) userProfile.phone = data.phone;
-    if (data.bio !== undefined) userProfile.bio = data.bio;
-    if (data.timezone !== undefined) userProfile.timezone = data.timezone;
+    const fieldsToUpdate = [
+      'jobTitle',
+      'company',
+      'location',
+      'phone',
+      'bio',
+      'timezone'
+    ];
+    
+    fieldsToUpdate.forEach(field => {
+      if (data[field] !== undefined) {
+        userProfile[field] = data[field];
+      }
+    });
     
     await userProfile.save();
     
-    // Combine user and profile data for response
-    const profileData = {
-      id: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      company: userProfile.company || '',
-      location: userProfile.location || '',
-      phone: userProfile.phone || '',
-      jobTitle: userProfile.jobTitle || '',
-      bio: userProfile.bio || '',
-      profilePicture: userProfile.profilePicture || null,
-      timezone: userProfile.timezone || 'UTC+00:00',
-    };
-    
     return NextResponse.json({ 
       success: true, 
-      profile: profileData
+      message: 'Profile updated successfully',
+      profile: {
+        name: user.name,
+        email: user.email,
+        jobTitle: userProfile.jobTitle,
+        company: userProfile.company,
+        location: userProfile.location,
+        phone: userProfile.phone,
+        bio: userProfile.bio,
+        profilePicture: userProfile.profilePicture,
+        timezone: userProfile.timezone
+      }
     });
   } catch (error: any) {
-    console.error('Error updating profile:', error);
+    console.error('Error updating user profile:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to update profile' },
+      { success: false, message: error.message || 'Failed to update user profile' },
       { status: 500 }
     );
   }

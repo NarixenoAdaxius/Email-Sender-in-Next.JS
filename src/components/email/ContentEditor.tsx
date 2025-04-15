@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'react-toastify';
@@ -19,6 +19,8 @@ interface ContentEditorProps {
 }
 
 export default function ContentEditor({ template, onSend, onVariablesChange }: ContentEditorProps) {
+  const [showBaseUrl, setShowBaseUrl] = useState(false);
+
   // Dynamically create a schema based on the template variables
   const createFormSchema = () => {
     // Create a schema map for our form
@@ -30,11 +32,14 @@ export default function ContentEditor({ template, onSend, onVariablesChange }: C
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           return emailList.every((email: string) => emailRegex.test(email));
         }, { message: 'Please enter valid email addresses separated by commas' }),
+      baseUrl: z.string().optional(),
     } as Record<string, z.ZodType<any>>;
     
-    // Add template variables to schema
+    // Add template variables to schema, except for baseUrl which we handle separately
     template.variables.forEach(variable => {
-      schemaMap[variable] = z.string().min(1, { message: `${variable} is required` });
+      if (variable !== 'baseUrl') {
+        schemaMap[variable] = z.string().min(1, { message: `${variable} is required` });
+      }
     });
     
     return z.object(schemaMap);
@@ -47,11 +52,14 @@ export default function ContentEditor({ template, onSend, onVariablesChange }: C
   const createDefaultValues = () => {
     const defaults: Record<string, string> = {
       recipients: '',
+      baseUrl: window.location.origin,
     };
     
     template.variables.forEach(variable => {
-      // Use default values from template if available
-      defaults[variable] = template.defaultValues?.[variable] || '';
+      if (variable !== 'baseUrl') {
+        // Use default values from template if available
+        defaults[variable] = template.defaultValues?.[variable] || '';
+      }
     });
     
     return defaults;
@@ -132,9 +140,40 @@ export default function ContentEditor({ template, onSend, onVariablesChange }: C
             <p className="text-sm text-gray-500">
               Fill in the variables to customize your email
             </p>
+            <button 
+              type="button"
+              className="text-xs text-blue-500 hover:underline mt-1"
+              onClick={() => setShowBaseUrl(!showBaseUrl)}
+            >
+              {showBaseUrl ? 'Hide Base URL' : 'Show Base URL (for debugging)'}
+            </button>
           </div>
           
+          {showBaseUrl && (
+            <FormField
+              control={form.control}
+              name="baseUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Base URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-gray-500">
+                    The base URL is used for loading assets like images in emails
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          
           {template.variables.map((variable) => {
+            // Skip the baseUrl field as it's handled separately
+            if (variable === 'baseUrl') return null;
+            
             // Determine if this field should be a textarea or input
             const isLongContent = variable.includes('content');
             

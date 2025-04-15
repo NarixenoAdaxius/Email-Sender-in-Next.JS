@@ -1,22 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fira_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
-import { ToastProvider } from "@/components/ui/use-toast";
+import ToastProvider from "@/components/providers/ToastProvider";
+import { ToastProvider as OriginalToastProvider } from "@/components/ui/use-toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const firaMono = Fira_Mono({
+  variable: "--font-fira-mono",
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Email Sender Application",
-  description: "A web application for sending customized emails with templates",
+  title: "PaletteMail",
+  description: "A modern email template builder and sender application",
+  icons: {
+    icon: "/PaletteMail/Icon/pltmaild-32px.ico",
+  }
 };
 
 export default function RootLayout({
@@ -27,14 +27,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${firaMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <Navigation />
-          <main>
-            {children}
-          </main>
-        </ToastProvider>
+        <OriginalToastProvider>
+          <ToastProvider>
+            <Navigation />
+            <main>
+              {children}
+            </main>
+          </ToastProvider>
+        </OriginalToastProvider>
       </body>
     </html>
   );

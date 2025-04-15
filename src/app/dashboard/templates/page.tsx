@@ -18,6 +18,7 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTemplates();
@@ -26,15 +27,19 @@ export default function TemplatesPage() {
   const fetchTemplates = async () => {
     try {
       setIsLoading(true);
+      setFetchError(null);
       const response = await fetch('/api/templates?includeDefault=false');
       
       if (!response.ok) {
-        throw new Error('Failed to fetch templates');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch templates');
       }
       
       const data = await response.json();
       setTemplates(data.templates || []);
     } catch (error: any) {
+      console.error('Error fetching templates:', error);
+      setFetchError(error.message || 'Failed to load templates');
       toast.error(error.message || 'Failed to load templates');
     } finally {
       setIsLoading(false);
@@ -194,7 +199,18 @@ export default function TemplatesPage() {
         </div>
       </div>
       
-      {templates.length === 0 ? (
+      {fetchError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-8 text-center">
+          <h3 className="text-lg font-medium text-red-800">Error loading templates</h3>
+          <p className="mt-2 text-red-600">{fetchError}</p>
+          <button
+            onClick={fetchTemplates}
+            className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/80"
+          >
+            Retry
+          </button>
+        </div>
+      ) : templates.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
           <h3 className="text-lg font-medium text-gray-900">No templates yet</h3>
           <p className="mt-1 text-sm text-gray-500">

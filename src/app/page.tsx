@@ -1,37 +1,57 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { cookies } from 'next/headers';
 
-export default function Home() {
+export default async function Home() {
+  // Check if there's a token cookie to determine if user is logged in
+  // This is a server component, so we can access cookies directly
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('token');
+  const hasAuthCookie = !!authToken;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8">
         <div className="flex flex-col justify-center space-y-8">
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-              <span className="block">Send beautiful</span>
-              <span className="block text-primary">customized emails</span>
+              <span className="block">Design professional</span>
+              <span className="block text-primary">email templates</span>
             </h1>
             <p className="mt-3 text-lg text-gray-500 md:text-xl">
-              Create and send professional emails using pre-designed templates.
+              Create and send beautiful emails with PaletteMail's intuitive template builder.
               Customize content, track delivery, and manage your email campaigns
-              all in one place.
+              all in one platform.
             </p>
           </div>
           
-          <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-            <Link
-              href="/register"
-              className="rounded-md bg-primary px-8 py-3 text-center text-base font-medium text-white shadow hover:bg-primary/90"
-            >
-              Get Started
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-md border border-gray-300 bg-white px-8 py-3 text-center text-base font-medium text-gray-700 shadow hover:bg-gray-50"
-            >
-              Log In
-            </Link>
-          </div>
+          {!hasAuthCookie && (
+            <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
+              <Link
+                href="/register"
+                className="rounded-md bg-primary px-8 py-3 text-center text-base font-medium text-white shadow hover:bg-primary/90"
+              >
+                Get Started
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-md border border-gray-300 bg-white px-8 py-3 text-center text-base font-medium text-gray-700 shadow hover:bg-gray-50"
+              >
+                Log In
+              </Link>
+            </div>
+          )}
+          
+          {hasAuthCookie && (
+            <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
+              <Link
+                href="/dashboard"
+                className="rounded-md bg-primary px-8 py-3 text-center text-base font-medium text-white shadow hover:bg-primary/90"
+              >
+                Go to Dashboard
+              </Link>
+            </div>
+          )}
           
           <div className="grid grid-cols-3 gap-4">
             <div className="flex flex-col items-center text-center">
@@ -64,11 +84,18 @@ export default function Home() {
         
         <div className="flex items-center justify-center">
           <div className="relative h-[500px] w-full max-w-lg">
-            <div className="absolute top-0 left-0 h-full w-full rounded-2xl bg-gradient-to-br from-primary to-purple-600 opacity-20 blur-3xl"></div>
+            <div className="absolute top-0 left-0 h-full w-full rounded-2xl bg-gradient-to-br from-primary to-secondary opacity-20 blur-3xl"></div>
             <div className="relative rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold">Monthly Newsletter</h2>
+                  <div className="flex items-center">
+                    <img 
+                      src="/PaletteMail/Icon/pltmaild 32px.svg" 
+                      alt="PaletteMail Icon" 
+                      className="h-6 w-auto mr-2" 
+                    />
+                    <h2 className="text-2xl font-bold">Monthly Newsletter</h2>
+                  </div>
                   <p className="text-sm text-gray-500">Send monthly updates to your subscribers</p>
                 </div>
                 

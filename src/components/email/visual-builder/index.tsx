@@ -55,15 +55,59 @@ export function VisualTemplateBuilder({ templateId, onSave }: VisualTemplateBuil
       
       const data = await response.json();
       
-      // Convert HTML template to blocks if it's a regular template
-      if (data.template.html && !data.template.blocks) {
-        // For now, just use default blocks when converting from HTML
+      // If template already has blocks data, use it directly
+      if (data.template.blocks && Array.isArray(data.template.blocks) && data.template.blocks.length > 0) {
+        setTemplate(data.template);
+      } 
+      // If template has HTML but no blocks (likely edited in code editor)
+      else if (data.template.html) {
+        // Basic conversion of HTML to blocks
+        // Start with default blocks structure
+        const convertedTemplate = {
+          ...data.template,
+          // We keep default blocks but with the template HTML in the first text block
+          blocks: [
+            // Header block
+            {
+              id: `header-${Date.now()}`,
+              type: 'header',
+              content: {
+                text: 'Template Header'
+              },
+              styles: getDefaultStylesForType('header')
+            },
+            // Text block with HTML content
+            {
+              id: `text-${Date.now()}`,
+              type: 'text',
+              content: {
+                text: 'This template was imported from HTML code. You can now edit it using the visual editor.'
+              },
+              styles: getDefaultStylesForType('text')
+            },
+            // Add a note that this is converted from HTML editor
+            {
+              id: `text-html-${Date.now()}`,
+              type: 'text',
+              content: {
+                text: 'Note: To preserve all your HTML formatting, you can also continue to edit this template in the HTML editor.'
+              },
+              styles: getDefaultStylesForType('text')
+            }
+          ]
+        };
+        setTemplate(convertedTemplate);
+        
+        // Notify user about the conversion
+        toast.info('Template was originally created in HTML editor. Basic conversion applied.', {
+          autoClose: 5000
+        });
+      } else {
+        // Fallback to empty template
         setTemplate({
           ...data.template,
           blocks: defaultBlocks
         });
-      } else {
-        setTemplate(data.template);
       }
     } catch (error: any) {
       toast.error(error.message || 'Error loading template');

@@ -22,8 +22,15 @@ export default function TemplatePreview({ template, variables }: TemplatePreview
     const replaceVariables = (text: string) => {
       let result = text;
       
+      // Use baseUrl from variables if it exists, otherwise use window.location.origin
+      const baseUrl = variables.baseUrl || window.location.origin;
+      const allVariables = { 
+        ...variables, 
+        baseUrl,
+      };
+      
       // Replace each variable placeholder with its value
-      Object.entries(variables).forEach(([key, value]) => {
+      Object.entries(allVariables).forEach(([key, value]) => {
         const regex = new RegExp(`{{${key}}}`, 'g');
         result = result.replace(regex, value || `[${key}]`);
       });
@@ -61,7 +68,7 @@ export default function TemplatePreview({ template, variables }: TemplatePreview
             title="Email Preview"
             srcDoc={previewHtml}
             className="min-h-[400px] w-full border-0"
-            sandbox="allow-same-origin"
+            sandbox="allow-same-origin allow-scripts"
           />
         </div>
       </div>

@@ -72,10 +72,17 @@ export default function RegisterForm() {
 
   return (
     <div className="mx-auto max-w-md space-y-6 p-6 bg-white rounded-lg shadow-md">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Create an Account</h1>
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <img 
+            src="/PaletteMail/Icon + Text/pltmail3 48px.svg" 
+            alt="PaletteMail Logo" 
+            className="h-12 w-auto" 
+          />
+        </div>
+        <h1 className="text-2xl font-bold" style={{ color: "#3F4555" }}>Create an Account</h1>
         <p className="text-sm text-gray-500">
-          Sign up to start sending beautiful emails
+          Sign up to start creating beautiful emails
         </p>
       </div>
 

@@ -3,7 +3,7 @@ import connectDB from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
 import User from '@/models/User';
 import SecuritySettings from '@/models/SecuritySettings';
-import * as OTPAuth from 'otpauth';
+import speakeasy from 'speakeasy';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,10 +20,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Parse request body
     const data = await request.json();
+    const { code } = data;
     
-    // Validate that the code exists
-    if (!data.code) {
+    if (!code) {
       return NextResponse.json(
         { success: false, message: 'Verification code is required' },
         { status: 400 }
@@ -45,57 +46,37 @@ export async function POST(request: NextRequest) {
     
     if (!securitySettings || !securitySettings.twoFactorSecret) {
       return NextResponse.json(
-        { success: false, message: '2FA setup not initialized' },
+        { success: false, message: 'Two-factor authentication not set up' },
         { status: 400 }
       );
     }
     
-    // Verify the code
-    try {
-      // For testing in development, accept code "123456"
-      let isValid = process.env.NODE_ENV === 'development' && data.code === '123456';
-      
-      if (!isValid) {
-        // Create a new TOTP object
-        const totp = new OTPAuth.TOTP({
-          issuer: 'EmailSender',
-          label: user.email,
-          algorithm: 'SHA1',
-          digits: 6,
-          period: 30,
-          secret: securitySettings.twoFactorSecret
-        });
-        
-        // Verify the token
-        isValid = totp.validate({ token: data.code }) !== null;
-      }
-      
-      if (!isValid) {
-        return NextResponse.json(
-          { success: false, message: 'Invalid verification code' },
-          { status: 400 }
-        );
-      }
-    } catch (error) {
-      console.error('Error validating 2FA code:', error);
+    // Verify the token
+    const verified = speakeasy.totp.verify({
+      secret: securitySettings.twoFactorSecret,
+      encoding: 'base32',
+      token: code
+    });
+    
+    if (!verified) {
       return NextResponse.json(
-        { success: false, message: 'Error validating code' },
-        { status: 500 }
+        { success: false, message: 'Invalid verification code' },
+        { status: 400 }
       );
     }
     
-    // Enable 2FA for the user
+    // Enable 2FA
     securitySettings.twoFactorEnabled = true;
     await securitySettings.save();
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Two-factor authentication verified successfully' 
+      message: 'Two-factor authentication verified and enabled' 
     });
   } catch (error: any) {
     console.error('Error confirming 2FA:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to verify two-factor authentication' },
+      { success: false, message: error.message || 'Failed to confirm two-factor authentication' },
       { status: 500 }
     );
   }

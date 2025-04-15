@@ -91,6 +91,14 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ templateId, onSave })
         updatedTemplate.variables = [...updatedTemplate.variables, 'senderName'];
       }
       
+      // Preserve the blocks data if it exists
+      // This ensures we don't lose visual editor structure when saving in code editor
+      const templateToSave = {
+        ...updatedTemplate,
+        // Keep blocks if they exist, but update HTML
+        blocks: updatedTemplate.blocks || null
+      };
+      
       const url = templateId 
         ? `/api/templates/${templateId}` 
         : '/api/templates';
@@ -102,7 +110,7 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ templateId, onSave })
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updatedTemplate)
+        body: JSON.stringify(templateToSave)
       });
       
       if (!response.ok) {

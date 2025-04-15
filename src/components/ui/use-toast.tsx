@@ -1,61 +1,99 @@
 "use client"
 
-import * as React from "react"
+import { toast as reactToastify } from 'react-toastify';
+import React, { createContext, useContext } from "react"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type ToastProps = {
-  id?: string
-  title?: string
-  description?: string
+// Original toast context structure for compatibility
+type ToastActionElement = React.ReactElement
+
+export type Toast = {
+  id?: string  // Make id optional to fix all the toast calls
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
   variant?: "default" | "destructive"
   duration?: number
   onClose?: () => void
 }
 
-type ToastContextType = {
-  toast: (props: ToastProps) => void
-  dismissToast: (id: string) => void
+// Add a ToastProps type for the Toast component
+type ToastProps = {
+  title?: React.ReactNode
+  description?: React.ReactNode
+  variant?: "default" | "destructive"
+  onClose?: () => void
 }
 
-const ToastContext = React.createContext<ToastContextType | undefined>(undefined)
+type ToasterToast = Toast & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
+}
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = React.useState<ToastProps[]>([])
-  
-  const toast = React.useCallback((props: ToastProps) => {
-    const id = String(Date.now())
-    const newToast = { id, ...props }
-    
-    setToasts(prev => [...prev, newToast])
-    
-    if (props.duration !== Infinity) {
-      setTimeout(() => {
-        dismissToast(id)
-      }, props.duration || 5000)
+const ToastContext = createContext<{
+  toast: (props: Toast) => void
+  dismiss: (toastId?: string) => void
+}>({
+  toast: () => {},
+  dismiss: () => {},
+})
+
+// Create a provider that uses react-toastify
+export function ToastProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  // Now using react-toastify
+  const toast = ({ title, description, variant }: Toast) => {
+    const message = title || description || '';
+    if (variant === 'destructive') {
+      reactToastify.error(message as string);
+    } else {
+      reactToastify.success(message as string);
     }
-  }, [])
-  
-  const dismissToast = React.useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
-  }, [])
+  }
+
+  const dismiss = () => {
+    reactToastify.dismiss();
+  }
 
   return (
-    <ToastContext.Provider value={{ toast, dismissToast }}>
+    <ToastContext.Provider value={{ toast, dismiss }}>
       {children}
-      
-      {/* Toast Container */}
-      <div className="fixed bottom-0 right-0 z-50 flex max-h-screen flex-col-reverse gap-2 overflow-hidden p-4 md:max-w-[420px]">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            {...toast}
-            onClose={() => dismissToast(toast.id!)}
-          />
-        ))}
-      </div>
     </ToastContext.Provider>
   )
+}
+
+// Hook for components that already use useToast
+export function useToast() {
+  const context = useContext(ToastContext)
+  
+  if (context === undefined) {
+    // Instead of throwing an error, we'll return a wrapper around react-toastify
+    return {
+      toast: ({ title, description, variant }: Toast) => {
+        const message = title || description || '';
+        if (variant === 'destructive') {
+          reactToastify.error(message as string);
+        } else {
+          reactToastify.success(message as string);
+        }
+      },
+      dismiss: (toastId?: string) => {
+        if (toastId) {
+          reactToastify.dismiss(toastId);
+        } else {
+          reactToastify.dismiss();
+        }
+      }
+    }
+  }
+  
+  return context
 }
 
 function Toast({
@@ -83,14 +121,4 @@ function Toast({
       </button>
     </div>
   )
-}
-
-export function useToast() {
-  const context = React.useContext(ToastContext)
-  
-  if (context === undefined) {
-    throw new Error("useToast must be used within a ToastProvider")
-  }
-  
-  return context
 } 

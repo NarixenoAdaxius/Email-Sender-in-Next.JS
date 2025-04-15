@@ -1,3 +1,6 @@
+import mongoose from 'mongoose';
+import EmailTemplate from '@/models/EmailTemplate';
+
 export interface EmailTemplate {
   id: string;
   name: string;
@@ -6,572 +9,262 @@ export interface EmailTemplate {
   html: string;
   variables: string[];
   defaultValues?: Record<string, string>;
+  predefined?: boolean;
 }
 
-const emailTemplates: EmailTemplate[] = [
+export const emailTemplates: EmailTemplate[] = [
   {
-    id: 'welcome',
+    id: 'welcome-email',
     name: 'Welcome Email',
     description: 'Send a welcome email to new users',
-    subject: 'Welcome to Our Service!',
+    subject: 'Welcome to PaletteMail, {{name}}!',
     html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Welcome to Our Service</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #eee;
-          }
-          .header {
-            background-color: #4a6cf7;
-            color: white;
-            padding: 20px;
-            text-align: center;
-          }
-          .content {
-            padding: 20px;
-          }
-          .button {
-            display: inline-block;
-            background-color: #4a6cf7;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-top: 20px;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Welcome, {{name}}!</h1>
-          </div>
-          <div class="content">
-            <p>Thank you for joining our service. We're excited to have you on board!</p>
-            <p>Your account has been created successfully with the email: {{email}}</p>
-            <p>If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
-            <a href="{{loginLink}}" class="button">Login to Your Account</a>
-            <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-              Best regards,<br>
-              {{senderName}}
-            </p>
-          </div>
-          <div class="footer">
-            <p>&copy; 2023 Our Company. All rights reserved.</p>
-            <p>You're receiving this email because you signed up for our service.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+        </div>
+        <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+          <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Welcome to PaletteMail, {{name}}!</h1>
+          <p style="margin-bottom: 15px;">Thank you for signing up! We're excited to have you on board.</p>
+          <p style="margin-bottom: 15px;">Your account has been successfully created with the email: <strong>{{email}}</strong></p>
+          <p style="margin-bottom: 15px;">If you have any questions or need assistance, feel free to reply to this email. Our support team is always here to help.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="{{loginLink}}" style="background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login to Your Account</a>
           </div>
         </div>
-      </body>
-      </html>
+        <div style="color: #777; font-size: 14px; text-align: center; margin-top: 30px;">
+          <p>This email was sent by {{senderName}} via PaletteMail</p>
+          <p>&copy; 2023 PaletteMail. All rights reserved.</p>
+        </div>
+      </div>
     `,
-    variables: ['name', 'email', 'loginLink', 'senderName'],
+    variables: ['name', 'email', 'loginLink', 'senderName', 'baseUrl'],
+    predefined: true,
   },
   {
-    id: 'newsletter',
+    id: 'monthly-newsletter',
     name: 'Monthly Newsletter',
-    description: 'Send a monthly newsletter to subscribers',
-    subject: '{{month}} Newsletter - Updates and News',
+    description: 'Send a monthly newsletter with updates and news',
+    subject: '{{month}} Newsletter - Latest Updates From Our Team',
     html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Monthly Newsletter</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #eee;
-          }
-          .header {
-            background-color: #4a6cf7;
-            color: white;
-            padding: 20px;
-            text-align: center;
-          }
-          .content {
-            padding: 20px;
-          }
-          .news-item {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>{{month}} Newsletter</h1>
-          </div>
-          <div class="content">
-            <p>Hello {{name}},</p>
-            <p>Here are the latest updates and news for {{month}}:</p>
-            
-            <div class="news-item">
-              <h2>{{headline1}}</h2>
-              <p>{{content1}}</p>
-            </div>
-            
-            <div class="news-item">
-              <h2>{{headline2}}</h2>
-              <p>{{content2}}</p>
-            </div>
-            
-            <div class="news-item">
-              <h2>{{headline3}}</h2>
-              <p>{{content3}}</p>
-            </div>
-            
-            <p>Thank you for your continued support!</p>
-            <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-              Best regards,<br>
-              {{senderName}}
-            </p>
-          </div>
-          <div class="footer">
-            <p>&copy; 2023 Our Company. All rights reserved.</p>
-            <p>You're receiving this email because you signed up for our newsletter.</p>
-            <p><a href="{{unsubscribeLink}}">Unsubscribe</a></p>
-          </div>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
-      </body>
-      </html>
+        <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+          <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">{{month}} Newsletter</h1>
+          <p style="margin-bottom: 15px;">Hello {{name}},</p>
+          <p style="margin-bottom: 15px;">Here are the latest updates from our team:</p>
+          
+          <div style="margin: 25px 0;">
+            {{#each newsItems}}
+            <div style="margin-bottom: 20px; border-left: 3px solid #4F46E5; padding-left: 15px;">
+              <h3 style="margin-bottom: 10px; color: #4F46E5;">{{this.title}}</h3>
+              <p>{{this.content}}</p>
+            </div>
+            {{/each}}
+          </div>
+          
+          <p style="margin-top: 15px;">Thank you for being a valued member of our community!</p>
+        </div>
+        <div style="color: #777; font-size: 14px; text-align: center; margin-top: 30px;">
+          <p>You received this email because you're subscribed to our newsletter.</p>
+          <p>To unsubscribe, <a href="{{unsubscribeLink}}" style="color: #4F46E5;">click here</a>.</p>
+          <p>&copy; 2023 PaletteMail. All rights reserved.</p>
+        </div>
+      </div>
     `,
-    variables: ['name', 'month', 'headline1', 'content1', 'headline2', 'content2', 'headline3', 'content3', 'unsubscribeLink', 'senderName'],
+    variables: ['month', 'name', 'newsItems', 'unsubscribeLink', 'baseUrl'],
+    predefined: true,
   },
   {
     id: 'password-reset',
     name: 'Password Reset',
     description: 'Send a password reset link to users',
-    subject: 'Reset Your Password',
+    subject: 'Reset Your Password - PaletteMail',
     html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Reset Your Password</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #eee;
-          }
-          .header {
-            background-color: #4a6cf7;
-            color: white;
-            padding: 20px;
-            text-align: center;
-          }
-          .content {
-            padding: 20px;
-          }
-          .button {
-            display: inline-block;
-            background-color: #4a6cf7;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-top: 20px;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Reset Your Password</h1>
-          </div>
-          <div class="content">
-            <p>Hello {{name}},</p>
-            <p>We received a request to reset your password. Click the button below to create a new password:</p>
-            <a href="{{resetLink}}" class="button">Reset Password</a>
-            <p>If you didn't request a password reset, you can ignore this email.</p>
-            <p>This link will expire in 1 hour for security reasons.</p>
-            <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-              Best regards,<br>
-              {{senderName}}
-            </p>
-          </div>
-          <div class="footer">
-            <p>&copy; 2023 Our Company. All rights reserved.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+        </div>
+        <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+          <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Reset Your Password</h1>
+          <p style="margin-bottom: 15px;">Hello {{name}},</p>
+          <p style="margin-bottom: 15px;">We received a request to reset your password. If you didn't make this request, you can ignore this email.</p>
+          <p style="margin-bottom: 15px;">To reset your password, please click the link below:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="{{resetLink}}" style="background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Your Password</a>
           </div>
         </div>
-      </body>
-      </html>
+        <div style="color: #777; font-size: 14px; text-align: center; margin-top: 30px;">
+          <p>This email was sent by {{senderName}} via PaletteMail</p>
+          <p>&copy; 2023 PaletteMail. All rights reserved.</p>
+        </div>
+      </div>
     `,
-    variables: ['name', 'resetLink', 'senderName'],
+    variables: ['name', 'resetLink', 'senderName', 'baseUrl'],
   },
   {
     id: 'interview-invitation',
     name: 'Interview Invitation',
     description: 'Send an interview invitation to candidates',
-    subject: 'Interview Invitation - {{position}} at {{company}}',
+    subject: 'Interview Invitation - {{position}} Position',
     html: `
-      
-
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Interview Invitation</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #f0f0f0;
-            background-color: #121212;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #1f1f1f;
-            border-radius: 8px;
-            border: 1px solid #333;
-          }
-          .logo {
-            text-align: left;
-            margin-bottom: 10px;
-          }
-          .logo img {
-            width: 50px;
-            height: auto;
-          }
-          .header {
-            margin-bottom: 20px;
-          }
-          .header h1 {
-            font-size: 24px;
-            font-weight: bold;
-            color: #daa520;
-            margin-bottom: 20px;
-          }
-          .candidate-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-          }
-          .candidate-name {
-            color: #daa520;
-            font-weight: bold;
-            font-size: 18px;
-          }
-          .position-company {
-            text-align: right;
-          }
-          .position, .company {
-            color: #daa520;
-            display: inline-block;
-          }
-          .position {
-            margin-right: 5px;
-          }
-          .border-line {
-            height: 1px;
-            background-color: #333;
-            margin: 15px 0 20px 0;
-            width: 100%;
-          }
-          .interview-info {
-            background-color: #252525;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 15px;
-          }
-          .interview-row {
-            display: flex;
-          }
-          .interview-label {
-            color: #daa520;
-            width: 160px;
-            font-weight: bold;
-          }
-          .interview-value {
-            color: #3b82f6;
-          }
-          .note {
-            background-color: #252525;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 15px;
-          }
-          .note-label {
-            color: #f0f0f0;
-            font-weight: bold;
-          }
-          .note-value {
-            color: #f0f0f0;
-          }
-          .contact-info {
-            margin: 20px 0;
-          }
-          .contact-row {
-            display: flex;
-            margin: 5px 0;
-          }
-          .contact-label {
-            color: #daa520;
-            width: 80px;
-            font-weight: bold;
-          }
-          .contact-value {
-            color: #3b82f6;
-          }
-          .contact-value a {
-            color: #3b82f6;
-            text-decoration: none;
-          }
-          .department {
-            color: #daa520;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin: 25px 0 15px 0;
-          }
-          .footer {
-            color: #aaa;
-            font-size: 12px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-          }
-          .version {
-            text-align: center;
-            color: #666;
-            font-size: 10px;
-            margin-top: 15px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="logo">
-            <a href="{{logoLink}}">
-              <img src="https://i.ibb.co/XjbYYGS/LOGO-1-removebg-preview.png" alt="{{company}} Logo">
-            </a>
-          </div>
-          
-          <div class="header">
-            <h1>Interview Invitation</h1>
-          </div>
-          
-          <div class="candidate-row">
-            <div class="candidate-name">{{candidateName}}</div>
-          </div>
-          
-          <div class="candidate-row">
-             <span class="position">{{position}}</span>
-          </div>
-          <div class="candidate-row">
-            <span class="company">{{company}}</span>
-          </div>
-          
-          
-          <div class="border-line"></div>
-          
-          <div class="interview-info">
-            <div class="interview-row">
-              <div class="interview-label">Interview Date & Time:</div>
-              <div class="interview-value">{{interviewDate}} {{interviewTime}}</div>
-            </div>
-            <div class="interview-row">
-              <div class="interview-label">Interview Location:</div>
-              <div class="interview-value">{{interviewLocation}}</div>
-            </div>
-          </div>
-          
-          <div class="note">
-            <span class="note-label">Note:</span>
-            <span class="note-value">{{interviewNotes}}</span>
-          </div>
-          
-          <p style="color: #f0f0f0;">Feel free to let us know if you have any inquiries such as clarifications and meeting reschedules.</p>
-          <p style="color: #f0f0f0; margin-bottom: 5px;">You can reach out to us:</p>
-          
-          <div class="contact-info">
-            <div class="contact-row">
-              <div class="contact-label">Phone:</div>
-              <div class="contact-value">{{contactPhone}}</div>
-            </div>
-            <div class="contact-row">
-              <div class="contact-label">Email:</div>
-              <div class="contact-value"><a href="mailto:{{contactEmail}}">{{contactEmail}}</a></div>
-            </div>
-            <div class="contact-row">
-              <div class="contact-label">Social:</div>
-              <div class="contact-value"><a href="{{contactLink}}">{{contactMethod}}</a></div>
-            </div>
-          </div>
-          
-          <p style="color: #f0f0f0;">We look forward to seeing you soon.</p>
-          
-          <div class="department">{{departmentName}} DEPARTMENT</div>
-          
-          <div class="footer">
-            <p>{{companyDescription}} is a non-profit and STEM/College-Oriented academic guild that is prepared exclusively for educational purposes including mentorship programs, ICT-related collaborations for the benefit of members of this guild that wish to participate actively.</p>
-            <p>Furthermore, the guild aims at encouraging communication with its alumni and members, with the purpose of generating close connections and educating one another.</p>
-          </div>
-          
-          <div class="version">v1.0</div>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
-      </body>
-      </html>
+        <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+          <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Interview Invitation</h1>
+          <p style="margin-bottom: 15px;">Hello {{name}},</p>
+          <p style="margin-bottom: 15px;">We're excited to invite you for an interview at {{company}}.</p>
+          <p style="margin-bottom: 15px;">The interview is scheduled for {{interviewDate}} at {{interviewTime}}.</p>
+          <p style="margin-bottom: 15px;">Please find the meeting details below:</p>
+          <p><strong>Meeting ID:</strong> {{meetingID}}</p>
+          <p><strong>Meeting Link:</strong> {{meetingLink}}</p>
+          <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="{{acceptLink}}" style="background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accept Invitation</a>
+            <a href="{{declineLink}}" style="background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-left: 10px;">Decline Invitation</a>
+          </div>
+        </div>
+        <div style="color: #777; font-size: 14px; text-align: center; margin-top: 30px;">
+          <p>This email was sent by {{senderName}} via PaletteMail</p>
+          <p>&copy; 2023 PaletteMail. All rights reserved.</p>
+        </div>
+      </div>
     `,
-    variables: [
-      'candidateName',
-      'position',
-      'company',
-      'companyDescription',
-      'interviewDate',
-      'interviewTime',
-      'interviewLocation',
-      'interviewNotes',
-      'contactMethod',
-      'contactLink',
-      'departmentName',
-      'logoLink',
-      'contactPhone',
-      'contactEmail',
-      'senderName'
-    ],
+    variables: ['name', 'company', 'interviewDate', 'interviewTime', 'meetingID', 'meetingLink', 'acceptLink', 'declineLink', 'senderName', 'baseUrl'],
+  },
+  {
+    id: 'general-notification',
+    name: 'General Notification',
+    description: 'Send a general notification to users',
+    subject: '{{subject}}',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+        </div>
+        <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+          <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Important Notification</h1>
+          <p style="margin-bottom: 15px;">Hello {{name}},</p>
+          <p style="margin-bottom: 15px;">We're excited to announce that we've made some exciting changes to our service. Here's what's new:</p>
+          <p>{{description}}</p>
+          <p>We're confident that these changes will make your experience even better.</p>
+          <p>If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="{{learnMoreLink}}" style="background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Learn More</a>
+          </div>
+        </div>
+        <div style="color: #777; font-size: 14px; text-align: center; margin-top: 30px;">
+          <p>This email was sent by {{senderName}} via PaletteMail</p>
+          <p>&copy; 2023 PaletteMail. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+    variables: ['name', 'title', 'description', 'learnMoreLink', 'senderName', 'baseUrl'],
+  },
+  {
+    id: 'security-alert',
+    name: 'Security Alert',
+    description: 'Send a security alert notification to users',
+    subject: 'Security Alert - Action Required',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+        </div>
+        <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+          <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Security Alert</h1>
+          <p style="margin-bottom: 15px;">Hello {{name}},</p>
+          <p style="margin-bottom: 15px;">We've detected unusual activity on your account. We're taking steps to protect your data.</p>
+          <p style="margin-bottom: 15px;">If this was not you, please reset your password immediately.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="{{resetLink}}" style="background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Your Password</a>
+          </div>
+        </div>
+        <div style="color: #777; font-size: 14px; text-align: center; margin-top: 30px;">
+          <p>This email was sent by {{senderName}} via PaletteMail</p>
+          <p>&copy; 2023 PaletteMail. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+    variables: ['name', 'title', 'resetLink', 'senderName', 'baseUrl'],
   },
 ];
 
+export default emailTemplates;
+
+/**
+ * Get all available predefined email templates
+ */
 export function getTemplates(): EmailTemplate[] {
   return emailTemplates;
 }
 
 /**
- * Get a template by ID, checking only predefined templates
- * Note: For custom templates from the database, use getTemplateByIdWithDb instead
+ * Get a predefined email template by ID
  */
 export function getTemplateById(id: string): EmailTemplate | undefined {
-  const template = emailTemplates.find(template => template.id === id);
-  
-  // Set default values for the interview invitation template
-  if (template && template.id === 'interview-invitation') {
-    // Pre-populate the template with default values
-    template.defaultValues = {
-      logoLink: 'https://www.facebook.com/stiorca.alpha',
-      contactPhone: '09059443808',
-      contactEmail: 'dev.alpha@gmail.com',
-      contactMethod: '09059443808',
-      departmentName: 'DEVELOPMENT',
-      company: 'ALPHA',
-      position: 'Backend Head',
-      candidateName: 'Narixeno',
-      interviewDate: 'April 20 2025',
-      interviewTime: '9:00 AM',
-      interviewLocation: 'ONSITE ROOM 402',
-      interviewNotes: 'BRING CV and PORTFOLIO',
-      companyDescription: 'ALPHA',
-      contactLink: '#'
-    };
-  }
-  
-  return template;
+  return emailTemplates.find(template => template.id === id);
 }
 
 /**
- * Get a template by ID, checking both predefined templates and the database
- * This should be used when needing to find a template for email sending
+ * Get a template from database by ID
  */
-export async function getTemplateByIdWithDb(id: string): Promise<EmailTemplate | null> {
+export async function getTemplateFromDb(id: string): Promise<any> {
   try {
-    // First try predefined templates
-    const predefinedTemplate = getTemplateById(id);
-    if (predefinedTemplate) {
-      return predefinedTemplate;
-    }
-    
-    // If not found in predefined templates, try database
-    // Import dynamically to avoid circular dependencies
-    const { default: EmailTemplateModel } = await import('@/models/EmailTemplate');
-    const { default: dbConnect } = await import('@/lib/dbConnect');
-    
-    // Connect to database
-    await dbConnect();
-    
-    // Find template in database
-    const dbTemplate = await EmailTemplateModel.findById(id);
-    if (!dbTemplate) {
-      return null;
-    }
-    
-    // Convert Mongoose document to plain object
-    const template = dbTemplate.toObject ? dbTemplate.toObject() : dbTemplate;
-    
-    // Add id property for consistency
-    if (template._id && !template.id) {
-      template.id = template._id.toString();
-    }
-    
-    return template as EmailTemplate;
+    const template = await EmailTemplate.findById(id);
+    return template;
   } catch (error) {
-    console.error('Error fetching template:', error);
+    console.error('Error fetching template from database:', error);
     return null;
   }
 }
 
 /**
- * Replace template variables with actual values
+ * Compile an email template with variables
  */
-export function compileTemplate(template: EmailTemplate, variables: Record<string, string>): {
-  subject: string;
-  html: string;
-} {
-  let subject = template.subject;
-  let html = template.html;
-
-  // Replace variables in the template
+export function compileTemplate(templateHtml: string, variables: Record<string, string>): string {
+  let compiledHtml = templateHtml;
+  
+  // Replace all variables in the template
   Object.entries(variables).forEach(([key, value]) => {
     const regex = new RegExp(`{{${key}}}`, 'g');
-    subject = subject.replace(regex, value);
-    html = html.replace(regex, value);
+    compiledHtml = compiledHtml.replace(regex, value || '');
   });
+  
+  return compiledHtml;
+}
 
-  return { subject, html };
-} 
+/**
+ * Get template by ID with support for database templates
+ */
+export async function getTemplateByIdWithDb(id: string): Promise<EmailTemplate | null> {
+  // First check predefined templates
+  const predefinedTemplate = getTemplateById(id);
+  if (predefinedTemplate) {
+    return predefinedTemplate;
+  }
+  
+  // Then check database
+  try {
+    const dbTemplate = await getTemplateFromDb(id);
+    if (dbTemplate) {
+      return {
+        id: dbTemplate._id.toString(),
+        name: dbTemplate.name,
+        description: dbTemplate.description,
+        subject: dbTemplate.subject,
+        html: dbTemplate.html,
+        variables: dbTemplate.variables,
+        defaultValues: dbTemplate.defaultValues || {}
+      };
+    }
+  } catch (error) {
+    console.error('Error getting template with DB:', error);
+  }
+  
+  return null;
+}

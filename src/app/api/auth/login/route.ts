@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
-import { generateToken, setAuthCookie } from '@/lib/auth';
+import SecuritySettings from '@/models/SecuritySettings';
+import { generateToken, setAuthCookie, createSession } from '@/lib/auth';
 import { loginSchema } from '@/utils/validation';
 
 export async function POST(request: Request) {
@@ -73,13 +74,40 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
+
+    // Check if user has 2FA enabled
+    console.log('Checking if 2FA is enabled...');
+    const securitySettings = await SecuritySettings.findOne({ userId: user._id });
     
-    // Generate token
+    if (securitySettings && securitySettings.twoFactorEnabled) {
+      console.log('2FA is enabled for this user, requiring verification');
+      return NextResponse.json({ 
+        requiresTwoFactor: true,
+        message: 'Please enter your 2FA verification code',
+        email: user.email
+      });
+    }
+    
+    // Get IP and user agent
+    const ip = request.headers.get('x-forwarded-for') || 
+              request.headers.get('x-real-ip') || 
+              'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+    
+    // Create session
+    console.log('Creating session...');
+    const sessionToken = await createSession(
+      user._id.toString(),
+      userAgent,
+      Array.isArray(ip) ? ip[0] : ip
+    );
+    
+    // Generate token with session ID
     console.log('Generating token...');
     console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
     console.log('User data for token:', { id: user._id, name: user.name, email: user.email });
     
-    const token = generateToken(user);
+    const token = generateToken(user, sessionToken);
     console.log('Token generated successfully, length:', token.length);
     
     // Create response

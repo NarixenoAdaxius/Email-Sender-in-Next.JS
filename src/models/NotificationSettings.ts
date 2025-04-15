@@ -2,19 +2,14 @@ import mongoose from 'mongoose';
 
 export interface INotificationSettings {
   userId: mongoose.Schema.Types.ObjectId;
-  email: {
-    marketing: boolean;
-    emailDelivery: boolean;
+  app: {
     newFeatures: boolean;
     security: boolean;
-  };
-  app: {
     emailSent: boolean;
     emailOpened: boolean;
     emailClicked: boolean;
     emailBounced: boolean;
     newTemplates: boolean;
-    teamInvites: boolean;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -28,15 +23,7 @@ const notificationSettingsSchema = new mongoose.Schema<INotificationSettings>(
       required: true,
       unique: true,
     },
-    email: {
-      marketing: {
-        type: Boolean,
-        default: true,
-      },
-      emailDelivery: {
-        type: Boolean,
-        default: true,
-      },
+    app: {
       newFeatures: {
         type: Boolean,
         default: true,
@@ -45,8 +32,6 @@ const notificationSettingsSchema = new mongoose.Schema<INotificationSettings>(
         type: Boolean,
         default: true,
       },
-    },
-    app: {
       emailSent: {
         type: Boolean,
         default: true,
@@ -64,10 +49,6 @@ const notificationSettingsSchema = new mongoose.Schema<INotificationSettings>(
         default: true,
       },
       newTemplates: {
-        type: Boolean,
-        default: true,
-      },
-      teamInvites: {
         type: Boolean,
         default: true,
       },

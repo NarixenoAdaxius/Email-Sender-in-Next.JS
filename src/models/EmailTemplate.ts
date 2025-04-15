@@ -9,6 +9,7 @@ export interface IEmailTemplate extends Document {
   css: string;
   variables: string[];
   isPublic: boolean;
+  blocks?: any[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,6 +51,10 @@ const EmailTemplateSchema = new Schema<IEmailTemplate>(
     isPublic: {
       type: Boolean,
       default: false,
+    },
+    blocks: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
     },
   },
   {
