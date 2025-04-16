@@ -1,74 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromRequest } from '@/lib/auth';
-import { markNotificationAsRead, markAllNotificationsAsRead } from '@/utils/notifications';
+import mongoose from 'mongoose';
+import connectDB from '@/lib/db';
 import AppNotification from '@/models/AppNotification';
+import { getUserFromRequest } from '@/lib/auth';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(req);
+    await connectDB();
     
-    // Check if user is authenticated
+    // Get the authenticated user
+    const user = await getUserFromRequest(request);
+    
+    // If no user is found, return unauthorized
     if (!user || !user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = user.id;
-    const data = await req.json();
     
-    // Check for notificationId or markAll flag
-    if (!data.notificationId && !data.markAll) {
+    // Parse request body
+    const data = await request.json();
+    
+    // Handle marking all as read
+    if (data.markAll) {
+      await AppNotification.updateMany(
+        { userId: user.id, isRead: false },
+        { $set: { isRead: true } }
+      );
+      
+      return NextResponse.json({
+        success: true,
+        message: 'All notifications marked as read'
+      });
+    }
+    
+    // Handle marking a single notification as read
+    if (!data.notificationId) {
       return NextResponse.json(
-        { error: 'Either notificationId or markAll parameter is required' },
+        { error: 'Notification ID is required' },
         { status: 400 }
       );
     }
     
-    let success = false;
-    
-    if (data.markAll) {
-      // Mark all notifications as read
-      success = await markAllNotificationsAsRead(userId);
-    } else {
-      // Verify the notification belongs to the user
-      const notification = await AppNotification.findById(data.notificationId);
-      
-      if (!notification) {
-        return NextResponse.json(
-          { error: 'Notification not found' },
-          { status: 404 }
-        );
-      }
-      
-      if (notification.userId.toString() !== userId) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        );
-      }
-      
-      // Mark the specific notification as read
-      success = await markNotificationAsRead(data.notificationId);
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(data.notificationId)) {
+      return NextResponse.json({ error: 'Invalid notification ID' }, { status: 400 });
     }
     
-    if (success) {
-      return NextResponse.json({
-        success: true,
-        message: data.markAll ? 'All notifications marked as read' : 'Notification marked as read',
-      });
-    } else {
-      return NextResponse.json(
-        { error: 'Failed to mark notification(s) as read' },
-        { status: 500 }
-      );
+    // Find and update the notification
+    const notification = await AppNotification.findOneAndUpdate(
+      { _id: data.notificationId, userId: user.id },
+      { $set: { isRead: true } },
+      { new: true }
+    );
+    
+    if (!notification) {
+      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
-  } catch (error: any) {
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Notification marked as read',
+      notification
+    });
+  } catch (error) {
     console.error('Error marking notification as read:', error);
     return NextResponse.json(
-      { error: `Failed to mark notification as read: ${error.message}` },
+      { error: 'Failed to mark notification as read' },
       { status: 500 }
     );
   }
-} 
+}
+
+export const dynamic = 'force-dynamic'; 

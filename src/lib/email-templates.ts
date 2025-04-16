@@ -13,6 +13,12 @@ export interface EmailTemplate {
   variables: string[];
   defaultValues?: Record<string, string>;
   predefined?: boolean;
+  isPublic?: boolean;
+  isOwner?: boolean;
+  userId?: string;
+  createdAt?: string;
+  _id?: string;
+  content?: string;
 }
 
 export const emailTemplates: EmailTemplate[] = [

@@ -12,6 +12,7 @@ export interface IEmailTemplate extends Document {
   blocks?: any[];
   createdAt: Date;
   updatedAt: Date;
+  content?: string;
 }
 
 const EmailTemplateSchema = new Schema<IEmailTemplate>(
@@ -59,7 +60,18 @@ const EmailTemplateSchema = new Schema<IEmailTemplate>(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
+
+// Add a virtual 'content' field that maps to html
+EmailTemplateSchema.virtual('content').get(function() {
+  return this.html;
+});
+
+EmailTemplateSchema.virtual('content').set(function(content: string) {
+  this.html = content;
+});
 
 export default mongoose.models.EmailTemplate || mongoose.model<IEmailTemplate>('EmailTemplate', EmailTemplateSchema); 

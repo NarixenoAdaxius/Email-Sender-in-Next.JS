@@ -65,35 +65,6 @@ interface SendEmailParams {
 }
 
 /**
- * Add tracking pixels and link trackers to email HTML
- */
-function addTracking(html: string, emailId: string, userId: string, recipient: string): string {
-  try {
-    const $ = cheerio.load(html);
-    
-    // Add tracking pixel for opens
-    const trackingPixelUrl = `${BASE_URL}/api/email/tracking/open?eid=${emailId}&uid=${userId}&r=${encodeURIComponent(recipient)}`;
-    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;" />`;
-    $('body').append(trackingPixel);
-    
-    // Add tracking for all links
-    $('a').each((_index: number, element: any) => {
-      const originalUrl = $(element).attr('href');
-      if (originalUrl && !originalUrl.startsWith('#') && !originalUrl.startsWith('mailto:')) {
-        const trackingUrl = `${BASE_URL}/api/email/tracking/click?eid=${emailId}&uid=${userId}&r=${encodeURIComponent(recipient)}&url=${encodeURIComponent(originalUrl)}`;
-        $(element).attr('href', trackingUrl);
-      }
-    });
-    
-    return $.html();
-  } catch (error) {
-    console.error('Error adding tracking to email:', error);
-    // Return the original HTML if tracking couldn't be added
-    return html;
-  }
-}
-
-/**
  * Send an email using a template and save to email history
  */
 export async function sendEmail({ userId, templateId, variables, recipients, template }: SendEmailParams): Promise<{ success: boolean; message: string; emailId?: string }> {
@@ -164,17 +135,14 @@ export async function sendEmail({ userId, templateId, variables, recipients, tem
       status: 'success',
     });
 
-    // Send separate emails to each recipient to enable per-recipient tracking
+    // Send separate emails to each recipient
     const sendPromises = recipients.map(async (recipient) => {
-      // Add tracking to the email HTML
-      const htmlWithTracking = addTracking(html, historyId.toString(), userId, recipient);
-      
       // Send the email
       return transporter.sendMail({
         from: `"${senderName}" <${EMAIL_USER}>`,
         to: recipient,
         subject,
-        html: htmlWithTracking,
+        html,
       });
     });
 

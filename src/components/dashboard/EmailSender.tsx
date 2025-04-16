@@ -15,13 +15,67 @@ export default function EmailSender() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleTemplateSelect = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setError(null);
-    setSuccess(null);
-    // Reset variables when template changes
-    const defaultVariables: Record<string, string> = {};
-    template.variables.forEach(v => defaultVariables[v] = template.defaultValues?.[v] || '');
-    setVariables(defaultVariables);
+    console.log('Selected template:', {
+      id: template.id,
+      name: template.name,
+      hasHtml: !!template.html,
+      hasContent: !!template.content,
+      htmlLength: template.html?.length || 0,
+      contentLength: template.content?.length || 0
+    });
+    
+    // If the template is missing html/content, try to fetch it fully from the API
+    if (!template.html && !template.content && template.id) {
+      console.log('Fetching complete template data...');
+      fetch(`/api/templates/${template.id}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.template) {
+            console.log('Fetched complete template:', {
+              id: data.template.id,
+              name: data.template.name,
+              hasHtml: !!data.template.html,
+              hasContent: !!data.template.content,
+              htmlLength: data.template.html?.length || 0,
+              contentLength: data.template.content?.length || 0
+            });
+            setSelectedTemplate(data.template);
+            
+            // Reset variables
+            const defaultVariables: Record<string, string> = {};
+            data.template.variables.forEach(
+              (v: string) => (defaultVariables[v] = data.template.defaultValues?.[v] || '')
+            );
+            setVariables(defaultVariables);
+          } else {
+            console.error('Failed to fetch complete template data');
+            setSelectedTemplate(template);
+            
+            // Reset variables
+            const defaultVariables: Record<string, string> = {};
+            template.variables.forEach(v => (defaultVariables[v] = template.defaultValues?.[v] || ''));
+            setVariables(defaultVariables);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching complete template:', error);
+          setSelectedTemplate(template);
+          
+          // Reset variables
+          const defaultVariables: Record<string, string> = {};
+          template.variables.forEach(v => (defaultVariables[v] = template.defaultValues?.[v] || ''));
+          setVariables(defaultVariables);
+        });
+    } else {
+      setSelectedTemplate(template);
+      setError(null);
+      setSuccess(null);
+      
+      // Reset variables when template changes
+      const defaultVariables: Record<string, string> = {};
+      template.variables.forEach(v => (defaultVariables[v] = template.defaultValues?.[v] || ''));
+      setVariables(defaultVariables);
+    }
   };
 
   const handleVariablesChange = (newVariables: Record<string, string>) => {
@@ -135,7 +189,7 @@ export default function EmailSender() {
           <p className="text-gray-600">
             Choose a template to get started with your email
           </p>
-          <TemplateSelector onSelect={handleTemplateSelect} />
+          <TemplateSelector onSelect={handleTemplateSelect} includePredefined={true} />
         </div>
       ) : (
         <div className="grid gap-8 md:grid-cols-2">

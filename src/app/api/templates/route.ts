@@ -4,6 +4,7 @@ import EmailTemplate from '@/models/EmailTemplate';
 import { getUserFromRequest } from '@/lib/auth';
 import dbConnect from '@/lib/dbConnect';
 import { EmailTemplate as PredefinedTemplate } from '@/lib/email-templates';
+import connectDB from '@/lib/db';
 
 // Helper function to normalize template objects
 function normalizeTemplate(template: any) {
@@ -22,75 +23,62 @@ function normalizeTemplate(template: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url);
-    const id = url.searchParams.get('id');
-    const includeDefault = url.searchParams.get('includeDefault') !== 'false';
-    const currentUser = getUserFromRequest(request);
+    await connectDB();
     
-    await dbConnect();
+    // Get the authenticated user
+    const user = await getUserFromRequest(request);
     
-    // If an ID is provided, return that specific template
-    if (id) {
-      // First check predefined templates
-      if (includeDefault) {
-        const predefinedTemplate = getTemplateById(id);
-        if (predefinedTemplate) {
-          return NextResponse.json({ template: predefinedTemplate });
-        }
-      }
-      
-      // Then check custom templates
-      const customTemplate = await EmailTemplate.findById(id);
-      if (!customTemplate) {
-        return NextResponse.json(
-          { error: 'Template not found' },
-          { status: 404 }
-        );
-      }
-      
-      // Check if user has access to this template
-      if (
-        !customTemplate.isPublic && 
-        (!currentUser || customTemplate.userId.toString() !== currentUser.id)
-      ) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        );
-      }
-      
-      return NextResponse.json({ 
-        template: normalizeTemplate(customTemplate.toObject ? customTemplate.toObject() : customTemplate) 
-      });
+    // If no user is found, return unauthorized
+    if (!user || !user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Otherwise return all accessible templates
-    let templates: Array<PredefinedTemplate | any> = [];
+    // Check if we should include predefined templates
+    const { searchParams } = new URL(request.url);
+    const includePredefined = searchParams.get('includeDefault') !== 'false';
     
-    // Add predefined templates
-    if (includeDefault) {
-      templates = [...getTemplates()];
+    // Get predefined templates if requested
+    let allTemplates = [];
+    if (includePredefined) {
+      const predefinedTemplates = getTemplates().map(template => ({
+        ...template,
+        predefined: true
+      }));
+      allTemplates = [...predefinedTemplates];
     }
     
-    // Add custom templates
-    const customTemplatesQuery = currentUser 
-      ? { $or: [{ isPublic: true }, { userId: currentUser.id }] }
-      : { isPublic: true };
-      
-    const customTemplates = await EmailTemplate.find(customTemplatesQuery);
+    // Query options to get user's own templates and public templates from others
+    const query = {
+      $or: [
+        { userId: user.id },                  // User's own templates
+        { isPublic: true, userId: { $ne: user.id } }  // Public templates from other users
+      ]
+    };
     
-    // Combine both types of templates and normalize IDs
-    const normalizedCustomTemplates = customTemplates.map(doc => 
-      normalizeTemplate(doc.toObject ? doc.toObject() : doc)
-    );
+    // Get templates from database
+    const databaseTemplates = await EmailTemplate.find(query)
+      .select('_id name description subject isPublic userId createdAt variables')
+      .sort({ createdAt: -1 });
     
-    templates = [...templates, ...normalizedCustomTemplates];
+    // Transform database templates to match the format
+    const transformedDbTemplates = databaseTemplates.map(template => {
+      const templateObj = template.toObject ? template.toObject() : template;
+      return {
+        ...templateObj,
+        id: templateObj._id.toString(),
+        predefined: false,
+        isOwner: templateObj.userId.toString() === user.id
+      };
+    });
     
-    return NextResponse.json({ templates });
-  } catch (error: any) {
+    // Add database templates to the result
+    allTemplates = [...allTemplates, ...transformedDbTemplates];
+    
+    return NextResponse.json({ templates: allTemplates });
+  } catch (error) {
     console.error('Error fetching templates:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch templates' },
+      { error: 'Failed to fetch templates' },
       { status: 500 }
     );
   }
@@ -110,6 +98,12 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     const data = await request.json();
     
+    // Handle content field - map it to html field
+    if (data.content && !data.html) {
+      data.html = data.content;
+      delete data.content;
+    }
+    
     const template = new EmailTemplate({
       ...data,
       userId: currentUser.id,
@@ -117,9 +111,16 @@ export async function POST(request: NextRequest) {
     
     const savedTemplate = await template.save();
     
+    // Make sure to include content in the response
+    const savedTemplateObj = savedTemplate.toObject ? savedTemplate.toObject() : savedTemplate;
+    const normalizedTemplate = normalizeTemplate(savedTemplateObj);
+    
     return NextResponse.json({ 
       message: 'Template created successfully',
-      template: normalizeTemplate(savedTemplate.toObject ? savedTemplate.toObject() : savedTemplate)
+      template: {
+        ...normalizedTemplate,
+        content: savedTemplateObj.html // Add content field to the response
+      }
     }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating template:', error);
@@ -128,4 +129,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
+
+export const dynamic = 'force-dynamic'; 

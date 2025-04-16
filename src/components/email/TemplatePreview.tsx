@@ -18,8 +18,28 @@ export default function TemplatePreview({ template, variables }: TemplatePreview
     setIsUpdating(true);
     const timer = setTimeout(() => setIsUpdating(false), 300);
     
+    // Log template data to help debug
+    console.log('Template in preview:', {
+      id: template.id,
+      name: template.name,
+      htmlLength: template.html?.length || 0,
+      contentLength: template.content?.length || 0,
+      hasHtml: !!template.html,
+      hasContent: !!template.content
+    });
+    
+    // Get template content (html for predefined templates, content for custom templates)
+    const templateHtml = template.html || template.content || '';
+    
+    console.log('Template HTML to use:', templateHtml.substring(0, 100) + '...');
+    
     // Function to replace variables in the template
     const replaceVariables = (text: string) => {
+      if (!text) {
+        console.log('No text provided to replace variables');
+        return '';
+      }
+      
       let result = text;
       
       // Use baseUrl from variables if it exists, otherwise use window.location.origin
@@ -29,6 +49,9 @@ export default function TemplatePreview({ template, variables }: TemplatePreview
         baseUrl,
       };
       
+      // Log variables being used
+      console.log('Variables for replacement:', allVariables);
+      
       // Replace each variable placeholder with its value
       Object.entries(allVariables).forEach(([key, value]) => {
         const regex = new RegExp(`{{${key}}}`, 'g');
@@ -36,17 +59,19 @@ export default function TemplatePreview({ template, variables }: TemplatePreview
       });
       
       // Replace any remaining variables with placeholders
-      template.variables.forEach(variable => {
-        const regex = new RegExp(`{{${variable}}}`, 'g');
-        result = result.replace(regex, `[${variable}]`);
-      });
+      if (template.variables && Array.isArray(template.variables)) {
+        template.variables.forEach(variable => {
+          const regex = new RegExp(`{{${variable}}}`, 'g');
+          result = result.replace(regex, `[${variable}]`);
+        });
+      }
       
       return result;
     };
     
     // Generate preview subject and HTML
-    setPreviewSubject(replaceVariables(template.subject));
-    setPreviewHtml(replaceVariables(template.html));
+    setPreviewSubject(replaceVariables(template.subject || ''));
+    setPreviewHtml(replaceVariables(templateHtml));
     
     return () => clearTimeout(timer);
   }, [template, variables]);
@@ -64,12 +89,21 @@ export default function TemplatePreview({ template, variables }: TemplatePreview
           {isUpdating && <span className="ml-2 text-xs text-blue-500">Updating...</span>}
         </div>
         <div className="p-4">
-          <iframe
-            title="Email Preview"
-            srcDoc={previewHtml}
-            className="min-h-[400px] w-full border-0"
-            sandbox="allow-same-origin allow-scripts"
-          />
+          {!previewHtml ? (
+            <div className="flex flex-col items-center justify-center h-[400px] bg-gray-50 text-gray-500">
+              <p>No content to preview</p>
+              <p className="text-xs mt-2">Template ID: {template.id}</p>
+              <p className="text-xs mt-1">Has HTML: {template.html ? 'Yes' : 'No'}</p>
+              <p className="text-xs mt-1">Has Content: {template.content ? 'Yes' : 'No'}</p>
+            </div>
+          ) : (
+            <iframe
+              title="Email Preview"
+              srcDoc={previewHtml}
+              className="min-h-[400px] w-full border-0"
+              sandbox="allow-same-origin allow-scripts"
+            />
+          )}
         </div>
       </div>
     </div>
