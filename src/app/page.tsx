@@ -95,6 +95,7 @@ export default async function Home() {
                       width={24}
                       height={24}
                       className="h-6 w-auto mr-2" 
+                      priority={true}
                     />
                     <h2 className="text-2xl font-bold">Monthly Newsletter</h2>
                   </div>

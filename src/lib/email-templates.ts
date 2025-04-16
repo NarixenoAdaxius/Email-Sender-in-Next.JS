@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 import EmailTemplate from '@/models/EmailTemplate';
 
+// Direct image URL for email clients
+const logoUrl = "https://i.imgur.com/P8J3e6Y.png";
+
 export interface EmailTemplate {
   id: string;
   name: string;
@@ -21,7 +24,7 @@ export const emailTemplates: EmailTemplate[] = [
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+          <img src="${logoUrl}" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
         <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
           <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Welcome to PaletteMail, {{name}}!</h1>
@@ -49,7 +52,7 @@ export const emailTemplates: EmailTemplate[] = [
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+          <img src="${logoUrl}" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
         <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
           <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">{{month}} Newsletter</h1>
@@ -85,7 +88,7 @@ export const emailTemplates: EmailTemplate[] = [
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+          <img src="${logoUrl}" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
         <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
           <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Reset Your Password</h1>
@@ -112,7 +115,7 @@ export const emailTemplates: EmailTemplate[] = [
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+          <img src="${logoUrl}" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
         <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
           <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Interview Invitation</h1>
@@ -144,7 +147,7 @@ export const emailTemplates: EmailTemplate[] = [
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+          <img src="${logoUrl}" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
         <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
           <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Important Notification</h1>
@@ -173,7 +176,7 @@ export const emailTemplates: EmailTemplate[] = [
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://i.imgur.com/P8J3e6Y.png" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
+          <img src="${logoUrl}" alt="PaletteMail Logo" style="height: 60px; width: auto;" />
         </div>
         <div style="background-color: #f9f9f9; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
           <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 20px;">Security Alert</h1>

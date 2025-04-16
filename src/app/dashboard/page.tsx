@@ -1,5 +1,6 @@
 import Link from "next/link";
 import EmailSender from "@/components/dashboard/EmailSender";
+import EmailTester from "@/components/dashboard/EmailTester";
 import { Metadata } from "next";
 import { EnvelopeIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
 import { User } from "lucide-react";
@@ -26,6 +27,7 @@ export default function DashboardPage() {
           icon={<EnvelopeIcon className="h-8 w-8 text-primary" />}
         >
           <EmailSender />
+          <EmailTester />
         </DashboardCard>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">

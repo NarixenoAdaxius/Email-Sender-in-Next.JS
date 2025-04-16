@@ -115,9 +115,10 @@ export default function Navigation() {
             <OptimizedImage 
               src="/PaletteMail/Icon + Text/pltmail3 32px.svg" 
               alt="PaletteMail Logo" 
-              width={24}
-              height={24}
-              className="h-6 w-auto"
+              width={32}
+              height={32}
+              className="h-8 w-auto"
+              priority={true}
             />
           </Link>
         </div>

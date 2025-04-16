@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "PaletteMail",
   description: "A modern email template builder and sender application",
   icons: {
-    icon: "/PaletteMail/Icon/pltmaild-32px.ico",
+    icon: "/favicon.ico",
   }
 };
 
@@ -26,6 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Preload key logo assets */}
+        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
       <body
         className={`${firaMono.variable} antialiased`}
       >
