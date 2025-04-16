@@ -11,6 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { registerSchema, type RegisterFormValues } from '@/utils/validation';
+import OptimizedImage from '@/components/ui/optimized-image';
 
 export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -74,10 +75,13 @@ export default function RegisterForm() {
     <div className="mx-auto max-w-md space-y-6 p-6 bg-white rounded-lg shadow-md">
       <div className="text-center space-y-4">
         <div className="flex justify-center">
-          <img 
+          <OptimizedImage 
             src="/PaletteMail/Icon + Text/pltmail3 48px.svg" 
             alt="PaletteMail Logo" 
-            className="h-12 w-auto" 
+            width={48}
+            height={48}
+            className="h-12 w-auto"
+            priority
           />
         </div>
         <h1 className="text-2xl font-bold" style={{ color: "#3F4555" }}>Create an Account</h1>

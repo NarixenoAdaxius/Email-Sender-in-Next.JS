@@ -31,6 +31,24 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  // Optimize for Vercel deployment and SVG handling
+  images: {
+    domains: ['i.imgur.com'], // Add other domains if needed
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
+  // Ensure SVGs are handled properly
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack', 'url-loader'],
+    });
+    return config;
+  },
 };
 
 module.exports = nextConfig; 

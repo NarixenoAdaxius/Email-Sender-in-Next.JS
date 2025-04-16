@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { NotificationPanel } from '@/components/ui/NotificationPanel';
+import OptimizedImage from '@/components/ui/optimized-image';
+import { toast } from 'react-toastify';
 
 interface User {
   id: string;
@@ -110,12 +112,13 @@ export default function Navigation() {
       <div className="container mx-auto flex h-14 items-center px-4">
         <div className="flex items-center mr-8">
           <Link href="/" className="flex items-center gap-1.5">
-            <img 
+            <OptimizedImage 
               src="/PaletteMail/Icon + Text/pltmail3 32px.svg" 
               alt="PaletteMail Logo" 
+              width={24}
+              height={24}
               className="h-6 w-auto"
             />
-            
           </Link>
         </div>
         
@@ -174,9 +177,11 @@ export default function Navigation() {
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 >
                   {user.profilePicture ? (
-                    <img 
+                    <OptimizedImage 
                       src={user.profilePicture} 
                       alt={user.name} 
+                      width={24}
+                      height={24}
                       className="h-6 w-6 rounded-full object-cover" 
                     />
                   ) : (
@@ -244,9 +249,11 @@ export default function Navigation() {
           {user && (
             <div className="flex items-center space-x-3 px-4 py-4 bg-gray-50">
               {user.profilePicture ? (
-                <img 
+                <OptimizedImage 
                   src={user.profilePicture} 
                   alt={user.name} 
+                  width={40}
+                  height={40}
                   className="h-10 w-10 rounded-full object-cover" 
                 />
               ) : (

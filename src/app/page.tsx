@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { cookies } from 'next/headers';
+import OptimizedImage from '@/components/ui/optimized-image';
 
 export default async function Home() {
   // Check if there's a token cookie to determine if user is logged in
@@ -19,9 +19,9 @@ export default async function Home() {
               <span className="block text-primary">email templates</span>
             </h1>
             <p className="mt-3 text-lg text-gray-500 md:text-xl">
-              Create and send beautiful emails with PaletteMail's intuitive template builder.
-              Customize content, track delivery, and manage your email campaigns
-              all in one platform.
+              Create and send beautiful emails with PaletteMail's intuitive
+              template builder. Customize content, track delivery, and manage
+              your email campaigns all in one platform.
             </p>
           </div>
           
@@ -89,9 +89,11 @@ export default async function Home() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center">
-                    <img 
+                    <OptimizedImage 
                       src="/PaletteMail/Icon/pltmaild 32px.svg" 
                       alt="PaletteMail Icon" 
+                      width={24}
+                      height={24}
                       className="h-6 w-auto mr-2" 
                     />
                     <h2 className="text-2xl font-bold">Monthly Newsletter</h2>
