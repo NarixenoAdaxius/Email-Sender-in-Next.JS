@@ -50,7 +50,7 @@ export default function TwoFactorVerificationForm({
   return (
     <div className="mx-auto space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-xl font-semibold">Two-Factor Authentication</h1>
+        <h1 className="text-xl font-semibold">Palette Mail Verification</h1>
         <p className="text-sm text-gray-500">
           Enter the verification code from your authenticator app
         </p>

@@ -84,7 +84,7 @@ export default function TwoFactorSetup({ onComplete, onCancel }: TwoFactorSetupP
       
       toast({
         title: "Success",
-        description: 'Two-factor authentication enabled successfully',
+        description: 'Palette Mail Authentication enabled successfully',
       });
       
       onComplete();
@@ -119,7 +119,7 @@ export default function TwoFactorSetup({ onComplete, onCancel }: TwoFactorSetupP
       <CardHeader>
         <CardTitle className="flex items-center">
           <Shield className="h-5 w-5 mr-2 text-primary" />
-          Set Up Two-Factor Authentication
+          Set Up Palette Mail Authentication
         </CardTitle>
         <CardDescription>
           Protect your account with an additional layer of security
@@ -130,7 +130,7 @@ export default function TwoFactorSetup({ onComplete, onCancel }: TwoFactorSetupP
         {step === 'initial' ? (
           <>
             <div className="mb-4 text-sm text-gray-600">
-              <p className="mb-2">Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your authenticator app.</p>
+              <p className="mb-2">Palette Mail Authentication adds an extra layer of security to your account by requiring a verification code from your authenticator app.</p>
               <ol className="list-decimal pl-5 space-y-1">
                 <li>Click the button below to start setup</li>
                 <li>Scan the QR code with your authenticator app</li>

@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Two-factor authentication verified and enabled' 
+      message: 'Palette Mail Authentication verified and enabled' 
     });
   } catch (error: any) {
     console.error('Error confirming 2FA:', error);

@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     
     // Generate a new secret
     const secret = speakeasy.generateSecret({
-      name: `Email Sender App (${user.email})`,
+      name: `Palette Mail (${user.email})`,
       length: 20
     });
     

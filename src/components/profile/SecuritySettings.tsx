@@ -332,19 +332,19 @@ const SecuritySettings: React.FC = () => {
       
       {/* Two-Factor Authentication */}
       {showingTwoFactorSetup ? (
-        <TwoFactorSetup 
-          onComplete={handleTwoFactorSetupComplete} 
-          onCancel={handleTwoFactorSetupCancel} 
+        <TwoFactorSetup
+          onComplete={handleTwoFactorSetupComplete}
+          onCancel={handleTwoFactorSetupCancel}
         />
       ) : (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Shield className="h-5 w-5 mr-2 text-primary" />
-              Two-Factor Authentication
+              Palette Mail Authentication
             </CardTitle>
             <CardDescription>
-              Enhance your account security with two-factor authentication
+              Enhance your account security with Palette Mail authentication
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -355,8 +355,9 @@ const SecuritySettings: React.FC = () => {
                 </h4>
                 <p className="text-sm text-gray-500">
                   {twoFactorEnabled
-                    ? 'Your account is protected with two-factor authentication'
-                    : 'Add an extra layer of security to your account'}
+                    ? 'Your account is protected with Palette Mail authentication'
+                    : 'We recommend enabling this for increased security'
+                  }
                 </p>
               </div>
               <div className="flex items-center">
