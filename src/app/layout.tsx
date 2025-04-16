@@ -16,11 +16,10 @@ export const metadata: Metadata = {
   description: "A modern email template builder and sender application",
   icons: {
     icon: [
-      { url: "/favicon.png", type: "image/png" },
-      { url: "/logo.svg", type: "image/svg+xml" }
+      { url: "/favicon-icon.svg?v=1", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon.png",
-    apple: "/logo.svg",
+    shortcut: "/favicon-icon.svg?v=1",
+    apple: "/favicon-icon.svg?v=1",
   },
   manifest: "/manifest.json",
 };
@@ -45,8 +44,8 @@ export default function RootLayout({
           type="image/svg+xml"
           fetchPriority="high"
         />
-        <link rel="icon" href="/favicon.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="icon" href="/favicon-icon.svg?v=1" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/favicon-icon.svg?v=1" />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body
