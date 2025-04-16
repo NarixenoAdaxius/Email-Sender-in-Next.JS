@@ -15,8 +15,16 @@ export const metadata: Metadata = {
   title: "PaletteMail",
   description: "A modern email template builder and sender application",
   icons: {
-    icon: "/favicon.ico",
-  }
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/logo.svg", type: "image/svg+xml" }
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/logo.svg",
+  },
+  manifest: "/manifest.json",
+  themeColor: "#3A4A74"
 };
 
 export default function RootLayout({
@@ -36,6 +44,10 @@ export default function RootLayout({
           fetchPriority="high"
         />
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body
         className={`${firaMono.variable} antialiased`}
