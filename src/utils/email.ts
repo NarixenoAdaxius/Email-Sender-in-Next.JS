@@ -4,12 +4,16 @@ import User from '@/models/User';
 import EmailHistory from '@/models/EmailHistory';
 import { compileTemplate, getTemplateByIdWithDb } from '@/lib/email-templates';
 import mongoose from 'mongoose';
+import * as cheerio from 'cheerio';
 
 // Get email configuration from environment variables
 const EMAIL_USER = process.env.SMTP_USER;
 const EMAIL_PASSWORD = process.env.SMTP_PASSWORD;
 const EMAIL_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const EMAIL_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
+
+// Base URL for the application
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // Create reusable transporter
 const createTransporter = () => {
@@ -61,9 +65,38 @@ interface SendEmailParams {
 }
 
 /**
+ * Add tracking pixels and link trackers to email HTML
+ */
+function addTracking(html: string, emailId: string, userId: string, recipient: string): string {
+  try {
+    const $ = cheerio.load(html);
+    
+    // Add tracking pixel for opens
+    const trackingPixelUrl = `${BASE_URL}/api/email/tracking/open?eid=${emailId}&uid=${userId}&r=${encodeURIComponent(recipient)}`;
+    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;" />`;
+    $('body').append(trackingPixel);
+    
+    // Add tracking for all links
+    $('a').each((_index: number, element: any) => {
+      const originalUrl = $(element).attr('href');
+      if (originalUrl && !originalUrl.startsWith('#') && !originalUrl.startsWith('mailto:')) {
+        const trackingUrl = `${BASE_URL}/api/email/tracking/click?eid=${emailId}&uid=${userId}&r=${encodeURIComponent(recipient)}&url=${encodeURIComponent(originalUrl)}`;
+        $(element).attr('href', trackingUrl);
+      }
+    });
+    
+    return $.html();
+  } catch (error) {
+    console.error('Error adding tracking to email:', error);
+    // Return the original HTML if tracking couldn't be added
+    return html;
+  }
+}
+
+/**
  * Send an email using a template and save to email history
  */
-export async function sendEmail({ userId, templateId, variables, recipients, template }: SendEmailParams): Promise<{ success: boolean; message: string }> {
+export async function sendEmail({ userId, templateId, variables, recipients, template }: SendEmailParams): Promise<{ success: boolean; message: string; emailId?: string }> {
   try {
     // Add the baseUrl for email template assets
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -112,7 +145,7 @@ export async function sendEmail({ userId, templateId, variables, recipients, tem
     }
     
     // Use senderName in the From field if available
-    const senderName = variables.senderName || 'Email Sender';
+    const senderName = variables.senderName || 'PaletteMail';
     
     // Log before sending
     console.log('Sending email with:', {
@@ -120,34 +153,39 @@ export async function sendEmail({ userId, templateId, variables, recipients, tem
       to: recipients.join(', '),
       subject
     });
-    
-    // Send mail
-    const info = await transporter.sendMail({
-      from: `"${senderName}" <${EMAIL_USER}>`,
-      to: recipients.join(', '),
+
+    // Save to email history first to get the history ID for tracking
+    const historyId = await saveEmailHistory({
+      userId: new mongoose.Types.ObjectId(userId),
+      templateId,
       subject,
-      html,
+      recipients,
+      content: html,
+      status: 'success',
     });
 
-    console.log('Email sent successfully:', info.messageId);
-
-    // Save to email history
-    try {
-      await saveEmailHistory({
-        userId: new mongoose.Types.ObjectId(userId),
-        templateId,
+    // Send separate emails to each recipient to enable per-recipient tracking
+    const sendPromises = recipients.map(async (recipient) => {
+      // Add tracking to the email HTML
+      const htmlWithTracking = addTracking(html, historyId.toString(), userId, recipient);
+      
+      // Send the email
+      return transporter.sendMail({
+        from: `"${senderName}" <${EMAIL_USER}>`,
+        to: recipient,
         subject,
-        recipients,
-        content: html,
-        status: 'success',
+        html: htmlWithTracking,
       });
-    } catch (historyError: any) {
-      console.warn('Failed to save email history for successful email:', historyError.message);
-    }
+    });
+
+    // Wait for all emails to be sent
+    const results = await Promise.all(sendPromises);
+    console.log('Emails sent successfully:', results.map(r => r.messageId));
 
     return {
       success: true,
-      message: `Email sent: ${info.messageId}`,
+      message: `Email sent to ${recipients.length} recipients`,
+      emailId: historyId.toString()
     };
   } catch (error: any) {
     console.error('Email sending error:', {
@@ -250,24 +288,22 @@ export async function sendTestEmail({
  * Get a compiled template with variables replaced
  */
 async function getCompiledTemplate(templateId: string, variables: Record<string, string>): Promise<{ subject: string; html: string }> {
+  // Get template from database
   const template = await getTemplateByIdWithDb(templateId);
   
   if (!template) {
     throw new Error(`Template with ID ${templateId} not found`);
   }
   
-  // Add the baseUrl for email template assets
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const variablesWithBaseUrl = { ...variables, baseUrl };
-  
-  const html = compileTemplate(template.html, variablesWithBaseUrl);
-  const subject = compileTemplate(template.subject, variablesWithBaseUrl);
+  // Compile the template with the variables
+  const html = compileTemplate(template.html, variables);
+  const subject = compileTemplate(template.subject, variables);
   
   return { subject, html };
 }
 
 /**
- * Save email to history
+ * Save email to history collection
  */
 async function saveEmailHistory(emailData: {
   userId: mongoose.Types.ObjectId;
@@ -277,10 +313,16 @@ async function saveEmailHistory(emailData: {
   content: string;
   status: 'success' | 'failed';
   errorMessage?: string;
-}) {
-  try {
-    await EmailHistory.create(emailData);
-  } catch (error) {
-    // Silently fail if history can't be saved
-  }
+}): Promise<mongoose.Types.ObjectId> {
+  // Create history record
+  const emailHistory = new EmailHistory({
+    ...emailData,
+    sentAt: new Date(),
+  });
+  
+  // Save to database
+  await emailHistory.save();
+  
+  // Return the ID
+  return emailHistory._id;
 } 

@@ -119,11 +119,27 @@ export function EmailPreview({ blocks, activeBlock, onSelectBlock, onMoveBlock, 
               
               {block.type === 'image' && (
                 <div style={{ textAlign: 'center', padding: '10px' }}>
-                  <img 
-                    src={block.content.src || ''} 
-                    alt={block.content.alt || ''} 
-                    style={block.styles as React.CSSProperties} 
-                  />
+                  {block.content.src ? (
+                    <img 
+                      src={block.content.src} 
+                      alt={block.content.alt || ''} 
+                      style={block.styles as React.CSSProperties} 
+                    />
+                  ) : (
+                    <div style={{ 
+                      width: '100%', 
+                      height: '150px', 
+                      backgroundColor: '#f0f0f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '4px',
+                      color: '#6b7280',
+                      border: '1px dashed #d1d5db'
+                    }}>
+                      Image placeholder
+                    </div>
+                  )}
                 </div>
               )}
               

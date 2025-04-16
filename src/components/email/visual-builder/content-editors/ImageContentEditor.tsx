@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { BlockContent, TemplateBlock } from '../types';
+import EmailImageUploader from '@/components/ui/EmailImageUploader';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface ImageContentEditorProps {
   block: TemplateBlock;
@@ -9,29 +12,39 @@ interface ImageContentEditorProps {
 }
 
 export function ImageContentEditor({ block, onUpdateContent }: ImageContentEditorProps) {
+  // Filter out placeholder URLs
+  const imageUrl = block.content.src && block.content.src.includes('placeholder.com') 
+    ? '' 
+    : block.content.src || '';
+
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Image URL
-        </label>
-        <input
-          type="text"
-          value={block.content.src || ''}
-          onChange={(e) => onUpdateContent(block.id, { src: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Label className="block text-sm font-medium">
+          Image
+        </Label>
+        <EmailImageUploader 
+          initialImage={imageUrl}
+          folder="email-images"
+          onImageSelected={(imageUrl) => onUpdateContent(block.id, { src: imageUrl })}
+          className="mt-1"
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
+      
+      <div className="space-y-2">
+        <Label className="block text-sm font-medium">
           Alt Text
-        </label>
-        <input
+        </Label>
+        <Input
           type="text"
           value={block.content.alt || ''}
           onChange={(e) => onUpdateContent(block.id, { alt: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+          className="mt-1 block w-full"
+          placeholder="Describe the image for accessibility"
         />
+        <p className="text-xs text-gray-500">
+          Describe the image to improve accessibility and SEO
+        </p>
       </div>
     </div>
   );

@@ -5,7 +5,6 @@ import { Settings, User, Lock, Bell, Key, Shield } from 'lucide-react';
 import ProfileSettings from '@/components/profile/ProfileSettings';
 import SecuritySettings from '@/components/profile/SecuritySettings';
 import NotificationSettings from '@/components/profile/NotificationSettings';
-import EmailStatistics from '@/components/profile/EmailStatistics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -96,19 +95,6 @@ const ProfilePage = () => {
               {activeTab === 'notifications' && <NotificationSettings />}
             </CardContent>
           </Card>
-          
-          {/* Email Statistics Detail */}
-          {activeTab === 'profile' && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Email Statistics</CardTitle>
-                <CardDescription>Detailed stats about your emails</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EmailStatistics />
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

@@ -1,17 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PaletteMail
+
+A modern email template builder and sender application.
+
+## Cloudinary Setup
+
+This application uses Cloudinary for image hosting, which is especially important for profile pictures and images in the visual email builder.
+
+### Configuration Steps:
+
+1. Create a free account on [Cloudinary](https://cloudinary.com/users/register/free)
+
+2. After signing up, navigate to your dashboard to find your account details
+
+3. Add the following variables to your `.env.local` file:
+   ```
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   ```
+
+4. For production deployment on Vercel, add these same environment variables in the Vercel project settings.
+
+### Features Enabled by Cloudinary:
+
+- **Profile Pictures**: Upload and store user profile images
+- **Email Builder**: Upload images or use external URLs in your email templates
+- **Deployment Compatibility**: Works seamlessly in serverless environments like Vercel
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

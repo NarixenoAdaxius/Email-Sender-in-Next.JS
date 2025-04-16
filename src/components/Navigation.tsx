@@ -66,6 +66,30 @@ export default function Navigation() {
     fetchUser();
   }, []);
   
+  // Listen for profile picture updates
+  useEffect(() => {
+    const handleProfileUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { profilePicture } = customEvent.detail;
+      
+      // If we have user data, update the profile picture
+      if (user) {
+        setUser({
+          ...user,
+          profilePicture
+        });
+      }
+    };
+    
+    // Add event listener for custom event
+    window.addEventListener('user-profile-updated', handleProfileUpdate);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('user-profile-updated', handleProfileUpdate);
+    };
+  }, [user]);
+  
   const handleLogout = async () => {
     try {
       const response = await fetch('/api/auth/logout', {
@@ -93,6 +117,7 @@ export default function Navigation() {
   const authLinks = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/dashboard/templates', label: 'Email Templates' },
+    { href: '/dashboard/email-statistics', label: 'Email Statistics' },
   ];
   
   // Navigation links for mobile menu
