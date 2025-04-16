@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { X } from 'lucide-react';
+
+// Check if we're in development environment
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 export default function EmailTester() {
+  // If we're in production, return null immediately
+  if (!isDevelopment) {
+    return null;
+  }
+
   // State for test email input
   const [testEmail, setTestEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -11,6 +20,21 @@ export default function EmailTester() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [envInfo, setEnvInfo] = useState<any>(null);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Initialize visibility from localStorage on component mount
+  useEffect(() => {
+    const savedState = localStorage.getItem('emailTesterHidden');
+    if (savedState === 'true') {
+      setIsVisible(false);
+    }
+  }, []);
+
+  // Hide the component and save state to localStorage
+  const handleHide = () => {
+    setIsVisible(false);
+    localStorage.setItem('emailTesterHidden', 'true');
+  };
 
   // Function to check environment variables
   const handleCheckEnv = async () => {
@@ -80,9 +104,25 @@ export default function EmailTester() {
     }
   };
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <div className="mt-6 p-4 border border-gray-200 rounded-lg">
-      <h2 className="text-lg font-medium mb-4">Email Configuration Tester</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-medium">Email Configuration Tester</h2>
+        <div className="flex items-center gap-2">
+          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Dev Only</span>
+          <button
+            onClick={handleHide}
+            className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            title="Hide email tester"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
       
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">

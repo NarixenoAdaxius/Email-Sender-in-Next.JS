@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import EmailSender from "@/components/dashboard/EmailSender";
 import EmailTester from "@/components/dashboard/EmailTester";
@@ -10,7 +11,29 @@ export const metadata: Metadata = {
   description: "Send emails using templates",
 };
 
+// Determine if we're in development environment
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 export default function DashboardPage() {
+  // Only show the tester in development environment
+  const [showTester, setShowTester] = useState(isDevelopment);
+  
+  // In production, we don't need any of this localStorage logic
+  useEffect(() => {
+    if (isDevelopment) {
+      const testerHidden = localStorage.getItem('emailTesterHidden') === 'true';
+      setShowTester(!testerHidden);
+    }
+  }, []);
+  
+  // Show the tester component and update localStorage (dev only)
+  const handleShowTester = () => {
+    if (isDevelopment) {
+      localStorage.removeItem('emailTesterHidden');
+      setShowTester(true);
+    }
+  };
+  
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-8">
@@ -25,9 +48,20 @@ export default function DashboardPage() {
           title="Send Email"
           description="Send emails using predefined or custom templates"
           icon={<EnvelopeIcon className="h-8 w-8 text-primary" />}
+          actions={
+            isDevelopment && !showTester ? (
+              <button
+                onClick={handleShowTester}
+                className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+                title="Show email configuration tester"
+              >
+                <span>Show Email Tester</span>
+              </button>
+            ) : null
+          }
         >
           <EmailSender />
-          <EmailTester />
+          {isDevelopment && showTester && <EmailTester />}
         </DashboardCard>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -67,18 +101,22 @@ interface DashboardCardProps {
   description: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  actions?: React.ReactNode;
 }
 
-function DashboardCard({ title, description, icon, children }: DashboardCardProps) {
+function DashboardCard({ title, description, icon, children, actions }: DashboardCardProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-200 bg-gray-50 p-4">
-        <div className="flex items-center">
-          {icon}
-          <div className="ml-4">
-            <h2 className="text-lg font-medium text-gray-900">{title}</h2>
-            <p className="text-sm text-gray-500">{description}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {icon}
+            <div className="ml-4">
+              <h2 className="text-lg font-medium text-gray-900">{title}</h2>
+              <p className="text-sm text-gray-500">{description}</p>
+            </div>
           </div>
+          {actions}
         </div>
       </div>
       <div className="p-4">

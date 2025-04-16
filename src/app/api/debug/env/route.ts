@@ -5,8 +5,17 @@ import { getBaseUrl } from '@/lib/utils';
 /**
  * API endpoint to check email-related environment variables
  * Used by the EmailTester component for diagnostics
+ * Only available in development environment
  */
 export async function GET(request: NextRequest) {
+  // Check if we're in production and return 404 if so
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'This endpoint is only available in development mode' },
+      { status: 404 }
+    );
+  }
+
   try {
     // Check authentication
     const user = getUserFromRequest(request);

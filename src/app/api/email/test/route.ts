@@ -3,7 +3,18 @@ import { sendTestEmail } from '@/utils/email';
 import { getTemplateById } from '@/lib/email-templates';
 import { getBaseUrl } from '@/lib/utils';
 
+/**
+ * Test email API route - only available in development
+ */
 export async function POST(request: NextRequest) {
+  // Restrict to development environment
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Test email endpoint is only available in development mode' },
+      { status: 404 }
+    );
+  }
+
   try {
     const { email } = await request.json();
     
