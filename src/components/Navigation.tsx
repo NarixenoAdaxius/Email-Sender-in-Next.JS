@@ -117,7 +117,8 @@ export default function Navigation() {
   const authLinks = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/dashboard/templates', label: 'Email Templates' },
-    { href: '/dashboard/email-statistics', label: 'Email Statistics' },
+    { href: '/dashboard/contacts', label: 'Contact Lists' },
+    { href: '/dashboard/history', label: 'Email History' },
   ];
   
   // Navigation links for mobile menu
