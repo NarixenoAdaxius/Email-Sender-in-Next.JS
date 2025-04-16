@@ -76,7 +76,7 @@ export default function RegisterForm() {
       <div className="text-center space-y-4">
         <div className="flex justify-center">
           <OptimizedImage 
-            src="/PaletteMail/Icon + Text/pltmail3 48px.svg" 
+            src="/logo.svg" 
             alt="PaletteMail Logo" 
             width={48}
             height={48}

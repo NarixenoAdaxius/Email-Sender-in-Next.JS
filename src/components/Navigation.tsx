@@ -113,7 +113,7 @@ export default function Navigation() {
         <div className="flex items-center mr-8">
           <Link href="/" className="flex items-center gap-1.5">
             <OptimizedImage 
-              src="/PaletteMail/Icon + Text/pltmail3 32px.svg" 
+              src="/logo.svg" 
               alt="PaletteMail Logo" 
               width={32}
               height={32}

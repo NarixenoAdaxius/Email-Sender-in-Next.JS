@@ -25,17 +25,13 @@ export default function OptimizedImage({
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
 
-  // This is used for SVG files in Vercel deployment
-  const createPublicImageUrl = (path: string) => {
-    if (path.startsWith('/')) {
-      return path.replace(/^\//, '');
-    }
-    return path;
-  };
-
   useEffect(() => {
-    // Update image source if prop changes
-    setImgSrc(src);
+    // Special case for PaletteMail logo, which is problematic
+    if (src.includes('PaletteMail') && src.endsWith('.svg')) {
+      setImgSrc('/logo.svg');
+    } else {
+      setImgSrc(src);
+    }
     
     // Reset states when src changes
     setIsLoaded(false);
@@ -46,12 +42,12 @@ export default function OptimizedImage({
   }, [src]);
 
   const handleError = () => {
-    console.warn(`Image failed to load: ${src}`);
+    console.warn(`Image failed to load: ${imgSrc}`);
     setHasError(true);
     
-    // If the image is SVG and failed to load, try with relative path for Vercel
-    if (src.endsWith('.svg') && isLocal) {
-      setImgSrc(createPublicImageUrl(src));
+    // Use fallback logo for any PaletteMail image that fails
+    if (src.includes('PaletteMail')) {
+      setImgSrc('/logo.svg');
     } else {
       // Fallback to a placeholder image if all else fails
       setImgSrc('/icons/image-placeholder.svg');
@@ -62,7 +58,7 @@ export default function OptimizedImage({
     setIsLoaded(true);
   };
 
-  // For external images or after SVG fallback, use a standard img tag with error handling
+  // For external images or after fallback, use a standard img tag with error handling
   if (!isLocal || hasError) {
     return (
       <img

@@ -28,7 +28,13 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Preload key logo assets */}
-        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+        <link 
+          rel="preload" 
+          href="/logo.svg" 
+          as="image"
+          type="image/svg+xml"
+          fetchPriority="high"
+        />
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body
