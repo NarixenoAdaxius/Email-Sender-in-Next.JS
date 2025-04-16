@@ -113,7 +113,7 @@ export default function EmailSender() {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="mb-8 text-3xl font-bold">Email Sender</h1>
+      <h1 className="mb-8 text-3xl font-bold">Email Composer</h1>
       
       {error && (
         <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-300 text-red-700">

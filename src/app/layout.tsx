@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fira_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
@@ -16,14 +16,16 @@ export const metadata: Metadata = {
   description: "A modern email template builder and sender application",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
       { url: "/favicon.png", type: "image/png" },
       { url: "/logo.svg", type: "image/svg+xml" }
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/favicon.png",
     apple: "/logo.svg",
   },
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
   themeColor: "#3A4A74"
 };
 
@@ -43,8 +45,6 @@ export default function RootLayout({
           type="image/svg+xml"
           fetchPriority="high"
         />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="icon" href="/favicon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/logo.svg" />
         <link rel="manifest" href="/manifest.json" />
