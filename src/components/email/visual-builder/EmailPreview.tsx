@@ -215,6 +215,9 @@ export function EmailPreview({ blocks, activeBlock, onSelectBlock, onMoveBlock, 
                   borderRadius: '8px',
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                   margin: '10px 0',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  display: 'block',
                   ...block.styles as React.CSSProperties
                 }}>
                   {block.content.title && (
@@ -239,6 +242,9 @@ export function EmailPreview({ blocks, activeBlock, onSelectBlock, onMoveBlock, 
                   padding: block.content.padding || '24px',
                   backgroundColor: block.content.backgroundColor || '#f9fafb',
                   margin: '10px 0',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  display: 'block',
                   ...block.styles as React.CSSProperties
                 }}>
                   {block.content.title && (
@@ -336,6 +342,9 @@ export function EmailPreview({ blocks, activeBlock, onSelectBlock, onMoveBlock, 
                                         borderRadius: '8px',
                                         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                                         margin: '10px 0',
+                                        width: '100%',
+                                        boxSizing: 'border-box',
+                                        display: 'block',
                                         ...columnBlock.styles as React.CSSProperties
                                       }}>
                                         {columnBlock.content.title && (

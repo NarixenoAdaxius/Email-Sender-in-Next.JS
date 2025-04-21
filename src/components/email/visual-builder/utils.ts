@@ -211,19 +211,25 @@ export const getDefaultStylesForType = (type: BlockType): Record<string, string>
     case 'card':
       return {
         width: '100%',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
-        lineHeight: '1.5',
-        color: '#374151'
-      };
-    case 'section':
-      return {
-        width: '100%',
+        boxSizing: 'border-box',
         fontFamily: 'Arial, sans-serif',
         fontSize: '16px',
         lineHeight: '1.5',
         color: '#374151',
-        textAlign: 'center'
+        maxWidth: '100%',
+        display: 'block'
+      };
+    case 'section':
+      return {
+        width: '100%',
+        boxSizing: 'border-box',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '16px',
+        lineHeight: '1.5',
+        color: '#374151',
+        textAlign: 'center',
+        maxWidth: '100%',
+        display: 'block'
       };
     default:
       return {};
@@ -372,6 +378,9 @@ export const generateHtml = (blocks: TemplateBlock[]): string => {
                     border-radius: 8px; 
                     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); 
                     margin: 10px 0;
+                    width: 100%;
+                    box-sizing: border-box;
+                    display: block;
                     ${styleObjectToString(colBlock.styles)}
                   ">
                     ${colBlock.content.title ? `<h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">${colBlock.content.title}</h3>` : ''}
@@ -491,6 +500,9 @@ export const generateHtml = (blocks: TemplateBlock[]): string => {
           border-radius: 8px; 
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); 
           margin: 10px 0;
+          width: 100%;
+          box-sizing: border-box;
+          display: block;
           ${styleObjectToString(block.styles)}
         ">
           ${block.content.title ? `<h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">${block.content.title}</h3>` : ''}
@@ -503,6 +515,9 @@ export const generateHtml = (blocks: TemplateBlock[]): string => {
           padding: ${block.content.padding || '24px'}; 
           background-color: ${block.content.backgroundColor || '#f9fafb'}; 
           margin: 10px 0;
+          width: 100%;
+          box-sizing: border-box;
+          display: block;
           ${styleObjectToString(block.styles)}
         ">
           ${block.content.title ? `<h2 style="font-size: 20px; font-weight: bold; margin-bottom: 16px; text-align: center;">${block.content.title}</h2>` : ''}
