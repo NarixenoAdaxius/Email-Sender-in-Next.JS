@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
@@ -19,37 +20,46 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    // Update state so the next render will show the fallback UI
     return {
       hasError: true,
-      error
+      error,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // You can log the error to an error reporting service here
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   render(): ReactNode {
     if (this.state.hasError) {
-      // You can render any custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
-      
+
       return (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <h2 className="mb-3 text-lg font-medium text-red-800">Something went wrong</h2>
-          <p className="mb-4 text-red-700">
-            There was an issue with the Visual Template Builder. Please try again or use the code editor instead.
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-center text-foreground">
+          <h2 className="mb-2 text-lg font-semibold text-destructive">Something went wrong</h2>
+          <p className="mb-5 text-sm text-muted-foreground">
+            There was an issue rendering the template builder. Try reloading or return to your templates list.
           </p>
-          <button
-            onClick={() => window.location.href = '/dashboard/templates'}
-            className="inline-flex items-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          >
-            Return to Templates
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => this.setState({ hasError: false, error: undefined })}
+            >
+              Try Again
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                window.location.href = '/dashboard/templates';
+              }}
+              className="bg-[#4F46E5] text-white hover:bg-[#4338CA]"
+            >
+              Return to Templates
+            </Button>
+          </div>
         </div>
       );
     }
@@ -58,4 +68,4 @@ class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-export default ErrorBoundary; 
+export default ErrorBoundary;

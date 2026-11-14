@@ -12,40 +12,56 @@ interface ImageContentEditorProps {
 }
 
 export function ImageContentEditor({ block, onUpdateContent }: ImageContentEditorProps) {
-  // Filter out placeholder URLs
-  const imageUrl = block.content.src && block.content.src.includes('placeholder.com') 
-    ? '' 
-    : block.content.src || '';
+  const srcId = `image-src-${block.id}`;
+  const altId = `image-alt-${block.id}`;
+
+  const imageUrl =
+    block.content.src && block.content.src.includes('placeholder.com')
+      ? ''
+      : block.content.src || '';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="space-y-2">
-        <Label className="block text-sm font-medium">
-          Image
-        </Label>
-        <EmailImageUploader 
+        <span className="block text-sm font-medium text-foreground">Upload Image</span>
+        <EmailImageUploader
           initialImage={imageUrl}
           folder="email-images"
-          onImageSelected={(imageUrl) => onUpdateContent(block.id, { src: imageUrl })}
+          onImageSelected={(selectedUrl) => onUpdateContent(block.id, { src: selectedUrl })}
           className="mt-1"
         />
       </div>
-      
+
       <div className="space-y-2">
-        <Label className="block text-sm font-medium">
+        <Label htmlFor={srcId} className="text-foreground">
+          Image URL
+        </Label>
+        <Input
+          id={srcId}
+          name="imageSrc"
+          type="text"
+          value={imageUrl}
+          onChange={(e) => onUpdateContent(block.id, { src: e.target.value })}
+          placeholder="https://example.com/banner.png or {{imageUrl}}"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={altId} className="text-foreground">
           Alt Text
         </Label>
         <Input
+          id={altId}
+          name="imageAlt"
           type="text"
           value={block.content.alt || ''}
           onChange={(e) => onUpdateContent(block.id, { alt: e.target.value })}
-          className="mt-1 block w-full"
           placeholder="Describe the image for accessibility"
         />
-        <p className="text-xs text-gray-500">
-          Describe the image to improve accessibility and SEO
+        <p className="text-xs text-muted-foreground">
+          Describes the image for screen readers and when email clients block images.
         </p>
       </div>
     </div>
   );
-} 
+}

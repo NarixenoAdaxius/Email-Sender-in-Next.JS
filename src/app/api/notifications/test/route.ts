@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { sendNotification } from '@/utils/notifications';
+import { sendNotification, NotificationType } from '@/utils/notifications';
 import { connectToDatabase } from '@/lib/mongoose';
 
 export async function POST(req: NextRequest) {
   try {
     await connectToDatabase();
     
-    const user = getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     
     // Check if user is authenticated
     if (!user || !user.id) {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const message = data.message || 'This is a test notification';
     
     // Valid notification types
-    const validTypes = [
+    const validTypes: NotificationType[] = [
       'newFeatures',
       'security',
       'emailSent',
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       'newTemplates'
     ];
     
-    if (!validTypes.includes(type)) {
+    if (!validTypes.includes(type as NotificationType)) {
       return NextResponse.json(
         { error: 'Invalid notification type' },
         { status: 400 }
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     // Send the notification
     const result = await sendNotification({
       userId,
-      type: type as any,
+      type: type as NotificationType,
       title,
       message,
       data: data.data || {}
@@ -63,10 +63,11 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating test notification:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: `Failed to create test notification: ${error.message}` },
+      { error: `Failed to create test notification: ${errorMessage}` },
       { status: 500 }
     );
   }

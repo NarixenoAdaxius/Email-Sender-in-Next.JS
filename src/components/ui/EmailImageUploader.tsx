@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Loader2, ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 
 interface EmailImageUploaderProps {
   onImageSelected: (imageUrl: string) => void;
@@ -63,7 +62,7 @@ const EmailImageUploader: React.FC<EmailImageUploaderProps> = ({
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-        } catch (e) {
+        } catch {
           // Unable to parse error message, use default
         }
         throw new Error(errorMessage);
@@ -78,9 +77,9 @@ const EmailImageUploader: React.FC<EmailImageUploaderProps> = ({
       setImageUrl(data.imageUrl);
       onImageSelected(data.imageUrl);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error uploading image:', error);
-      setError(error.message || 'Error uploading image');
+      setError(error instanceof Error ? error.message : 'Error uploading image');
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -96,36 +95,14 @@ const EmailImageUploader: React.FC<EmailImageUploaderProps> = ({
     }
   };
 
-  const clearImage = async () => {
-    try {
-      // Only attempt to delete if we have an image URL and it's from our own API
-      if (imageUrl && imageUrl.startsWith('/api/images/')) {
-        // Extract the image ID from the URL
-        const imageId = imageUrl.split('/').pop();
-        
-        if (imageId) {
-          // Send DELETE request to remove the image from the database
-          const response = await fetch(`/api/images/${imageId}`, {
-            method: 'DELETE',
-          });
-          
-          if (!response.ok) {
-            console.error('Failed to delete image from database:', await response.text());
-          }
-        }
-      }
-      
-      // Clear the image URL locally regardless of server response
-      setImageUrl('');
-      onImageSelected('');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (error) {
-      console.error('Error removing image:', error);
-      // Still clear the image locally even if deletion fails
-      setImageUrl('');
-      onImageSelected('');
+  const clearImage = () => {
+    // Only clear the selection locally so saved templates or sent emails referencing
+    // this image ID remain intact until explicit replacement.
+    setError(null);
+    setImageUrl('');
+    onImageSelected('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -133,7 +110,7 @@ const EmailImageUploader: React.FC<EmailImageUploaderProps> = ({
     <div className={`space-y-4 ${className}`}>
       {imageUrl ? (
         <div className="relative">
-          <div className="relative rounded-md overflow-hidden border border-gray-200">
+          <div className="relative rounded-xl overflow-hidden border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={imageUrl} 
@@ -141,22 +118,24 @@ const EmailImageUploader: React.FC<EmailImageUploaderProps> = ({
               className="w-full h-auto max-h-[300px] object-contain" 
             />
             <button 
+              type="button"
               onClick={clearImage}
-              className="absolute top-2 right-2 p-1 bg-white/80 hover:bg-white rounded-full text-gray-700 hover:text-red-500 transition-colors"
+              aria-label="Remove image"
+              className="absolute top-2 right-2 p-1.5 bg-background/85 backdrop-blur-sm hover:bg-background rounded-full text-foreground/80 hover:text-destructive transition-colors cursor-pointer shadow-xs"
               title="Remove image"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
           {/* Display image URL but remove the placeholder URL if present */}
           {!imageUrl.includes('placeholder.com') && (
-            <p className="text-xs text-gray-500 mt-1 break-all">{imageUrl}</p>
+            <p className="text-xs text-muted-foreground mt-1 break-all">{imageUrl}</p>
           )}
         </div>
       ) : (
         <div className="space-y-4">
           <div 
-            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+            className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-accent/50 transition-colors cursor-pointer"
             onClick={triggerFileUpload}
           >
             <input
@@ -167,9 +146,9 @@ const EmailImageUploader: React.FC<EmailImageUploaderProps> = ({
               onChange={handleFileChange}
             />
             <div className="flex flex-col items-center justify-center">
-              <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-sm text-gray-600 mb-1">Drag and drop an image, or click to select</p>
-              <p className="text-xs text-gray-500">JPEG, PNG, GIF, WebP up to 5MB</p>
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
+              <p className="text-sm text-foreground/85 mb-1">Drag and drop an image, or click to select</p>
+              <p className="text-xs text-muted-foreground">JPEG, PNG, GIF, WebP up to 5MB</p>
             </div>
           </div>
           
@@ -196,7 +175,7 @@ const EmailImageUploader: React.FC<EmailImageUploaderProps> = ({
       )}
       
       {error && (
-        <div className="text-sm text-red-500 mt-2">
+        <div role="alert" className="text-sm text-destructive mt-2">
           {error}
         </div>
       )}

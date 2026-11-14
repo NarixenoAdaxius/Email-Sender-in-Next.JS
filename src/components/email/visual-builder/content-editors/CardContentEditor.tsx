@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BlockContent, TemplateBlock } from '../types';
+import { normalizeHexColor } from '../utils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,12 +13,26 @@ interface CardContentEditorProps {
 }
 
 export function CardContentEditor({ block, onUpdateContent }: CardContentEditorProps) {
+  const titleId = `card-title-${block.id}`;
+  const descId = `card-description-${block.id}`;
+  const bgPickerId = `card-bg-color-picker-${block.id}`;
+  const bgTextId = `card-bg-color-${block.id}`;
+  const borderPickerId = `card-border-color-picker-${block.id}`;
+  const borderTextId = `card-border-color-${block.id}`;
+  const paddingId = `card-padding-${block.id}`;
+
+  const bgValue = block.content.backgroundColor ?? '#ffffff';
+  const borderValue = block.content.borderColor ?? '#e5e7eb';
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="card-title">Card Title</Label>
+        <Label htmlFor={titleId} className="text-foreground">
+          Card Title
+        </Label>
         <Input
-          id="card-title"
+          id={titleId}
+          name="cardTitle"
           value={block.content.title || ''}
           onChange={(e) => onUpdateContent(block.id, { title: e.target.value })}
           placeholder="Card Title"
@@ -25,9 +40,12 @@ export function CardContentEditor({ block, onUpdateContent }: CardContentEditorP
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="card-description">Card Description</Label>
+        <Label htmlFor={descId} className="text-foreground">
+          Card Description
+        </Label>
         <Textarea
-          id="card-description"
+          id={descId}
+          name="cardDescription"
           value={block.content.description || ''}
           onChange={(e) => onUpdateContent(block.id, { description: e.target.value })}
           placeholder="Card Description"
@@ -36,17 +54,23 @@ export function CardContentEditor({ block, onUpdateContent }: CardContentEditorP
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="card-bg-color">Background Color</Label>
-        <div className="flex gap-2">
-          <Input
-            id="card-bg-color"
+        <Label htmlFor={bgTextId} className="text-foreground">
+          Background Color
+        </Label>
+        <div className="flex items-center gap-2">
+          <input
+            id={bgPickerId}
+            name="cardBackgroundColorPicker"
             type="color"
-            value={block.content.backgroundColor || '#ffffff'}
+            aria-label="Card background color picker"
+            value={normalizeHexColor(bgValue, '#ffffff')}
             onChange={(e) => onUpdateContent(block.id, { backgroundColor: e.target.value })}
-            className="w-12"
+            className="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1"
           />
           <Input
-            value={block.content.backgroundColor || '#ffffff'}
+            id={bgTextId}
+            name="cardBackgroundColor"
+            value={bgValue}
             onChange={(e) => onUpdateContent(block.id, { backgroundColor: e.target.value })}
             placeholder="#ffffff"
           />
@@ -54,17 +78,23 @@ export function CardContentEditor({ block, onUpdateContent }: CardContentEditorP
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="card-border-color">Border Color</Label>
-        <div className="flex gap-2">
-          <Input
-            id="card-border-color"
+        <Label htmlFor={borderTextId} className="text-foreground">
+          Border Color
+        </Label>
+        <div className="flex items-center gap-2">
+          <input
+            id={borderPickerId}
+            name="cardBorderColorPicker"
             type="color"
-            value={block.content.borderColor || '#e5e7eb'}
+            aria-label="Card border color picker"
+            value={normalizeHexColor(borderValue, '#e5e7eb')}
             onChange={(e) => onUpdateContent(block.id, { borderColor: e.target.value })}
-            className="w-12"
+            className="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1"
           />
           <Input
-            value={block.content.borderColor || '#e5e7eb'}
+            id={borderTextId}
+            name="cardBorderColor"
+            value={borderValue}
             onChange={(e) => onUpdateContent(block.id, { borderColor: e.target.value })}
             placeholder="#e5e7eb"
           />
@@ -72,14 +102,17 @@ export function CardContentEditor({ block, onUpdateContent }: CardContentEditorP
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="card-padding">Padding</Label>
+        <Label htmlFor={paddingId} className="text-foreground">
+          Padding
+        </Label>
         <Input
-          id="card-padding"
-          value={block.content.padding || '16px'}
+          id={paddingId}
+          name="cardPadding"
+          value={block.content.padding ?? ''}
           onChange={(e) => onUpdateContent(block.id, { padding: e.target.value })}
           placeholder="16px"
         />
       </div>
     </div>
   );
-} 
+}

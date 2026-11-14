@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -44,10 +44,11 @@ export async function GET(request: NextRequest) {
       twoFactorEnabled: securitySettings.twoFactorEnabled,
       lastPasswordChange: securitySettings.lastPasswordChange
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching security settings:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch security settings';
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch security settings' },
+      { error: message },
       { status: 500 }
     );
   }

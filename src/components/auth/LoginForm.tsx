@@ -1,94 +1,104 @@
 "use client";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
-import Link from 'next/link';
-import { z } from 'zod';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import Link from "next/link";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { motion } from "motion/react";
 
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { loginSchema, type LoginFormValues } from '@/utils/validation';
-import TwoFactorVerificationForm from './TwoFactorVerificationForm';
-import OptimizedImage from '@/components/ui/optimized-image';
-
-// 2FA code validation schema
-const twoFactorSchema = z.object({
-  code: z.string().min(6).max(6, { message: "Verification code must be 6 digits" })
-});
-
-type TwoFactorFormValues = z.infer<typeof twoFactorSchema>;
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { loginSchema, type LoginFormValues } from "@/utils/validation";
+import TwoFactorVerificationForm from "./TwoFactorVerificationForm";
+import OptimizedImage from "@/components/ui/optimized-image";
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
+  const [userEmail, setUserEmail] = useState("");
   const router = useRouter();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
-  const twoFactorForm = useForm<TwoFactorFormValues>({
-    resolver: zodResolver(twoFactorSchema),
-    defaultValues: {
-      code: '',
-    },
-  });
+  const getSafeRedirectPath = (): string => {
+    if (typeof window === "undefined") return "/dashboard";
+    const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
+    if (
+      callbackUrl &&
+      callbackUrl.startsWith("/") &&
+      !callbackUrl.startsWith("//") &&
+      !callbackUrl.includes("\\")
+    ) {
+      try {
+        const parsed = new URL(callbackUrl, window.location.origin);
+        if (parsed.origin === window.location.origin) {
+          return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+        }
+      } catch {
+        return "/dashboard";
+      }
+    }
+    return "/dashboard";
+  };
 
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        credentials: 'include',
+        credentials: "include",
       });
-      
-      // Handle non-JSON responses
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Server error: Received non-JSON response');
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server error: Received non-JSON response");
       }
 
       const result = await response.json();
 
       if (!response.ok && !result.requiresTwoFactor) {
-        throw new Error(result.error || 'Failed to login');
+        throw new Error(result.error || "Failed to login");
       }
 
-      // Check if 2FA is required
       if (result.requiresTwoFactor) {
         setRequiresTwoFactor(true);
         setUserEmail(data.email);
-        toast.info('Please enter your verification code');
-        setIsLoading(false);
+        toast.info("Please enter your verification code");
         return;
       }
 
-      // Show success message
-      toast.success('Logged in successfully!');
-      
-      // Add a delay before redirecting to ensure cookie is set
-      setTimeout(() => {
-        // Force a hard navigation
-        window.location.href = '/dashboard';
-      }, 1500);
-    } catch (error: any) {
-      const errorMsg = error.message || 'Login failed';
+      toast.success("Logged in successfully!");
+      window.dispatchEvent(new Event("auth-state-changed"));
+      router.push(getSafeRedirectPath());
+      router.refresh();
+    } catch (error: unknown) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Login failed";
       setErrorMessage(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -101,68 +111,81 @@ export default function LoginForm() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch('/api/auth/verify-2fa', {
-        method: 'POST',
+      const response = await fetch("/api/auth/verify-2fa", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: userEmail,
-          code: code,
+          code,
         }),
-        credentials: 'include',
+        credentials: "include",
       });
-      
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server error: Received non-JSON response");
+      }
+
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to verify code');
+        throw new Error(result.message || result.error || "Failed to verify code");
       }
 
-      // Show success message
-      toast.success('Logged in successfully!');
-      
-      // Add a delay before redirecting to ensure cookie is set
-      setTimeout(() => {
-        // Force a hard navigation
-        window.location.href = '/dashboard';
-      }, 1500);
-    } catch (error: any) {
-      const errorMsg = error.message || 'Verification failed';
+      toast.success("Logged in successfully!");
+      window.dispatchEvent(new Event("auth-state-changed"));
+      router.push(getSafeRedirectPath());
+      router.refresh();
+    } catch (error: unknown) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Verification failed";
       setErrorMessage(errorMsg);
       toast.error(errorMsg);
-      throw error; // Re-throw to be caught by the TwoFactorVerificationForm
+      throw error;
     } finally {
       setIsLoading(false);
     }
   }
 
-  // Handle going back to login form from 2FA screen
   const handleCancelTwoFactor = () => {
     setRequiresTwoFactor(false);
+    setErrorMessage(null);
   };
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <div className="flex justify-center">
-        <OptimizedImage 
-          src="/logo.svg" 
-          alt="PaletteMail Logo" 
-          width={48}
-          height={48}
-          className="h-12 w-auto"
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", duration: 0.4, bounce: 0 }}
+      className="mx-auto w-full max-w-md rounded-2xl border border-border/80 bg-card/90 text-card-foreground backdrop-blur-xl shadow-xl p-6 sm:p-8 space-y-6"
+    >
+      <div className="flex flex-col items-center text-center space-y-3">
+        <OptimizedImage
+          src="/logo.svg"
+          alt="PaletteMail Logo"
+          width={170}
+          height={32}
+          style={{ width: "auto" }}
+          className="h-8 dark:invert dark:hue-rotate-180 dark:brightness-125"
           priority
         />
-      </div>
-      <div className="text-center space-y-4">
-        <h1 className="text-2xl font-bold" style={{ color: "#3F4555" }}>Welcome Back</h1>
-        <p className="text-sm text-gray-500">
-          Enter your credentials to access your account
-        </p>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Welcome Back
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Enter your credentials to access your account
+          </p>
+        </div>
       </div>
 
       {errorMessage && !requiresTwoFactor && (
-        <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm">
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm"
+        >
           <p className="font-semibold">Error</p>
           <p>{errorMessage}</p>
         </div>
@@ -197,15 +220,32 @@ export default function LoginForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="••••••••"
-                      type="password"
-                      autoComplete="current-password"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input
+                        placeholder="••••••••"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        disabled={isLoading}
+                        className="pr-10"
+                        {...field}
+                      />
+                    </FormControl>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -213,10 +253,17 @@ export default function LoginForm() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-10"
               disabled={isLoading}
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Logging in...
+                </>
+              ) : (
+                "Login"
+              )}
             </Button>
           </form>
         </Form>
@@ -229,14 +276,17 @@ export default function LoginForm() {
         />
       )}
 
-      <div className="text-center text-sm">
+      <div className="text-center text-sm text-muted-foreground">
         <p>
-          Don't have an account?{' '}
-          <Link href="/register" className="font-medium text-primary hover:underline">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-semibold text-[#4F46E5] dark:text-[#A5B4FC] hover:underline"
+          >
             Register
           </Link>
         </p>
       </div>
-    </div>
+    </motion.div>
   );
-} 
+}

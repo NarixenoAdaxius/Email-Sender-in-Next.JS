@@ -5,49 +5,46 @@ import Session from '@/models/Session';
 
 export async function POST(request: NextRequest) {
   try {
-    // Connect to DB
     await connectDB();
-    
-    // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
-    
-    // Get the current session token
+
+    const userPayload = await getUserFromRequest(request);
     const token = getTokenFromRequest(request);
-    
-    // Create response object
+
     const response = NextResponse.json({
       success: true,
-      message: 'Logged out successfully'
+      message: 'Logged out successfully',
     });
-    
-    // Clear auth cookie
+
     clearAuthCookie(response);
-    
-    // If we have a token, revoke the session in the database
-    if (token && userPayload) {
-      try {
-        const session = await Session.findOne({ token });
-        if (session) {
-          session.isRevoked = true;
-          await session.save();
+
+    if (userPayload) {
+      const tokensToRevoke = [token, userPayload.sessionId].filter(
+        (t): t is string => Boolean(t)
+      );
+
+      if (tokensToRevoke.length > 0) {
+        try {
+          await Session.updateMany(
+            { token: { $in: tokensToRevoke }, isRevoked: false },
+            { $set: { isRevoked: true } }
+          );
+        } catch (sessionError) {
+          console.error('Error revoking session:', sessionError);
         }
-      } catch (sessionError) {
-        // Just log the error but don't fail the request
-        console.error('Error revoking session:', sessionError);
       }
     }
-    
+
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Logout failed';
     console.error('Logout error:', error);
     const response = NextResponse.json(
-      { success: false, message: error.message || 'Logout failed' },
+      { success: false, message },
       { status: 500 }
     );
-    
-    // Still clear the cookie even on error
+
     clearAuthCookie(response);
-    
+
     return response;
   }
-} 
+}

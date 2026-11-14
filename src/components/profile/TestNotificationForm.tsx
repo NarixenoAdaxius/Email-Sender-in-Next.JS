@@ -3,10 +3,29 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { requestJson } from '@/components/dashboard/requestJson';
+
+const NOTIFICATION_TYPES = [
+  { value: 'newFeatures', label: 'New Features' },
+  { value: 'security', label: 'Security Alert' },
+  { value: 'emailSent', label: 'Email Sent' },
+  { value: 'emailOpened', label: 'Email Opened' },
+  { value: 'emailClicked', label: 'Email Link Clicked' },
+  { value: 'emailBounced', label: 'Email Bounced' },
+  { value: 'newTemplates', label: 'New Templates' },
+] as const;
 
 export function TestNotificationForm() {
   const { toast } = useToast();
@@ -15,42 +34,41 @@ export function TestNotificationForm() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
 
-  // Send test notification
   const sendTestNotification = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setIsLoading(true);
-      
-      const response = await fetch('/api/notifications/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+
+      await requestJson(
+        '/api/notifications/test',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: notificationType,
+            title: title.trim() || undefined,
+            message: message.trim() || 'This is a test notification',
+          }),
         },
-        body: JSON.stringify({
-          type: notificationType,
-          title: title || undefined, // Only send if not empty
-          message: message || 'This is a test notification',
-        }),
+        'Failed to create test notification'
+      );
+
+      toast({
+        title: 'Success',
+        description: 'Test notification created',
       });
-      
-      if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Test notification created',
-        });
-        
-        // Clear form
-        setTitle('');
-        setMessage('');
-      } else {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create test notification');
-      }
-    } catch (error: any) {
+
+      setTitle('');
+      setMessage('');
+    } catch (error: unknown) {
+      const errMessage =
+        error instanceof Error ? error.message : 'Failed to create test notification';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create test notification',
+        description: errMessage,
         variant: 'destructive',
       });
     } finally {
@@ -59,58 +77,56 @@ export function TestNotificationForm() {
   };
 
   return (
-    <Card>
+    <Card className="border-border bg-card">
       <CardHeader>
         <CardTitle className="text-xl">Test Notifications</CardTitle>
         <CardDescription>
-          Create test notifications to see how they appear in the app
+          Create test notifications to preview how they appear in the app
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={sendTestNotification} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="type" className="text-sm font-medium">
-              Notification Type
-            </label>
-            <select
-              id="type"
+            <Label htmlFor="test-notification-type">Notification Type</Label>
+            <Select
+              name="type"
               value={notificationType}
-              onChange={(e) => setNotificationType(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onValueChange={setNotificationType}
               disabled={isLoading}
             >
-              <option value="newFeatures">New Features</option>
-              <option value="security">Security Alert</option>
-              <option value="emailSent">Email Sent</option>
-              <option value="emailOpened">Email Opened</option>
-              <option value="emailClicked">Email Link Clicked</option>
-              <option value="emailBounced">Email Bounced</option>
-              <option value="newTemplates">New Templates</option>
-            </select>
+              <SelectTrigger id="test-notification-type">
+                <SelectValue placeholder="Select notification type" />
+              </SelectTrigger>
+              <SelectContent>
+                {NOTIFICATION_TYPES.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          
+
           <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium">
-              Title (Optional)
-            </label>
+            <Label htmlFor="test-notification-title">Title (Optional)</Label>
             <Input
-              id="title"
+              id="test-notification-title"
+              name="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Leave empty to use default title"
               disabled={isLoading}
             />
             <p className="text-xs text-muted-foreground">
-              If left empty, a default title will be used based on the notification type
+              If left empty, a default title is generated from the notification type.
             </p>
           </div>
-          
+
           <div className="space-y-2">
-            <label htmlFor="message" className="text-sm font-medium">
-              Message
-            </label>
+            <Label htmlFor="test-notification-message">Message</Label>
             <Textarea
-              id="message"
+              id="test-notification-message"
+              name="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter notification message"
@@ -118,12 +134,17 @@ export function TestNotificationForm() {
               rows={3}
             />
           </div>
-          
-          <Button type="submit" disabled={isLoading} className="w-full">
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isLoading ? 'Sending...' : 'Send Test Notification'}
           </Button>
         </form>
       </CardContent>
     </Card>
   );
-} 
+}

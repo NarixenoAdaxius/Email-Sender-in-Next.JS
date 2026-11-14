@@ -3,25 +3,25 @@
 import React from 'react';
 import { BlockContent, TemplateBlock } from '../types';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash } from 'lucide-react';
+import { ChevronDown, Plus, Trash } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { 
-  FaFacebook, 
-  FaTwitter, 
-  FaInstagram, 
-  FaLinkedin, 
-  FaYoutube, 
-  FaPinterest, 
-  FaTiktok, 
-  FaSnapchat, 
-  FaGithub, 
+import {
+  FaFacebook,
+  FaTwitter,
+  FaInstagram,
+  FaLinkedin,
+  FaYoutube,
+  FaPinterest,
+  FaTiktok,
+  FaSnapchat,
+  FaGithub,
   FaGlobe,
   FaDiscord,
   FaReddit,
   FaTwitch,
   FaWhatsapp,
-  FaTelegram
+  FaTelegram,
 } from 'react-icons/fa';
 
 interface SocialLink {
@@ -37,8 +37,7 @@ interface SocialContentEditorProps {
 
 export function SocialContentEditor({ block, onUpdateContent }: SocialContentEditorProps) {
   const socialLinks: SocialLink[] = block.content.socialLinks || [];
-  
-  // Define platform options with labels and icons
+
   const platformOptions = [
     { value: 'facebook', label: 'Facebook', icon: <FaFacebook className="h-5 w-5 text-[#1877F2]" /> },
     { value: 'twitter', label: 'Twitter', icon: <FaTwitter className="h-5 w-5 text-[#1DA1F2]" /> },
@@ -46,114 +45,136 @@ export function SocialContentEditor({ block, onUpdateContent }: SocialContentEdi
     { value: 'linkedin', label: 'LinkedIn', icon: <FaLinkedin className="h-5 w-5 text-[#0077B5]" /> },
     { value: 'youtube', label: 'YouTube', icon: <FaYoutube className="h-5 w-5 text-[#FF0000]" /> },
     { value: 'pinterest', label: 'Pinterest', icon: <FaPinterest className="h-5 w-5 text-[#BD081C]" /> },
-    { value: 'tiktok', label: 'TikTok', icon: <FaTiktok className="h-5 w-5 text-black" /> },
-    { value: 'snapchat', label: 'Snapchat', icon: <FaSnapchat className="h-5 w-5 text-[#FFFC00]" /> },
-    { value: 'github', label: 'GitHub', icon: <FaGithub className="h-5 w-5 text-[#333333]" /> },
+    { value: 'tiktok', label: 'TikTok', icon: <FaTiktok className="h-5 w-5 text-foreground" /> },
+    { value: 'snapchat', label: 'Snapchat', icon: <FaSnapchat className="h-5 w-5 text-[#EAB308]" /> },
+    { value: 'github', label: 'GitHub', icon: <FaGithub className="h-5 w-5 text-foreground" /> },
     { value: 'discord', label: 'Discord', icon: <FaDiscord className="h-5 w-5 text-[#5865F2]" /> },
     { value: 'reddit', label: 'Reddit', icon: <FaReddit className="h-5 w-5 text-[#FF4500]" /> },
     { value: 'twitch', label: 'Twitch', icon: <FaTwitch className="h-5 w-5 text-[#9146FF]" /> },
     { value: 'whatsapp', label: 'WhatsApp', icon: <FaWhatsapp className="h-5 w-5 text-[#25D366]" /> },
     { value: 'telegram', label: 'Telegram', icon: <FaTelegram className="h-5 w-5 text-[#0088CC]" /> },
-    { value: 'website', label: 'Website', icon: <FaGlobe className="h-5 w-5 text-[#4285F4]" /> }
+    { value: 'website', label: 'Website', icon: <FaGlobe className="h-5 w-5 text-[#4F46E5]" /> },
   ];
 
-  // Map platform names to icon names for HTML generation
-  const getPlatformIcon = (platform: string): string => {
-    return platform || 'globe';
-  };
-
   const handleAddLink = () => {
-    const newLinks = [...socialLinks, { platform: 'website', url: '', icon: 'globe' }];
+    const newLinks = [...socialLinks, { platform: 'website', url: '', icon: 'website' }];
     onUpdateContent(block.id, { socialLinks: newLinks });
   };
 
   const handleUpdateLink = (index: number, field: string, value: string) => {
     const newLinks = [...socialLinks];
-    newLinks[index] = { 
-      ...newLinks[index], 
+    newLinks[index] = {
+      ...newLinks[index],
       [field]: value,
-      // Update icon when platform changes
-      ...(field === 'platform' ? { icon: getPlatformIcon(value) } : {})
+      ...(field === 'platform' ? { icon: value || 'website' } : {}),
     };
     onUpdateContent(block.id, { socialLinks: newLinks });
   };
 
   const handleRemoveLink = (index: number) => {
-    const newLinks = socialLinks.filter((_: any, i: number) => i !== index);
+    const newLinks = socialLinks.filter((_, i) => i !== index);
     onUpdateContent(block.id, { socialLinks: newLinks });
   };
 
-  // Get icon component for preview
   const getPlatformIconComponent = (platform: string) => {
-    const option = platformOptions.find(opt => opt.value === platform);
-    return option ? option.icon : <FaGlobe className="h-5 w-5 text-[#4285F4]" />;
+    const option = platformOptions.find((opt) => opt.value === platform);
+    return option ? option.icon : <FaGlobe className="h-5 w-5 text-[#4F46E5]" />;
   };
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Social Links</Label>
-        
-        {/* Preview how the icons will look */}
-        <div className="bg-gray-50 rounded-md p-3 flex flex-wrap gap-3 justify-center border border-gray-200 mb-4">
+      <div className="space-y-3">
+        <span className="block text-sm font-medium text-foreground">Social Links</span>
+
+        <div className="flex flex-wrap justify-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
           {socialLinks.length === 0 ? (
-            <p className="text-sm text-gray-500">Add social links to see a preview</p>
+            <p className="text-sm text-muted-foreground">Add social links to see a preview</p>
           ) : (
             socialLinks.map((link, i) => (
               <div key={i} className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card shadow-xs">
                   {getPlatformIconComponent(link.platform)}
                 </div>
-                <span className="text-xs mt-1">{link.platform}</span>
+                <span className="mt-1 text-xs capitalize text-muted-foreground">{link.platform}</span>
               </div>
             ))
           )}
         </div>
-        
-        {socialLinks.map((link: SocialLink, index: number) => (
-          <div key={index} className="grid grid-cols-[auto_1fr_2fr_auto] gap-2 items-center mt-2 bg-white p-2 rounded-md border border-gray-100">
-            <div className="flex-shrink-0">
-              {getPlatformIconComponent(link.platform)}
-            </div>
-            
-            <select
-              value={link.platform}
-              onChange={(e) => handleUpdateLink(index, 'platform', e.target.value)}
-              className="flex h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              {platformOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            
-            <Input
-              value={link.url}
-              onChange={(e) => handleUpdateLink(index, 'url', e.target.value)}
-              placeholder="https://example.com"
-            />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleRemoveLink(index)}
-              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <div className="space-y-2">
+          {socialLinks.map((link: SocialLink, index: number) => {
+            const platformId = `social-platform-${block.id}-${index}`;
+            const urlId = `social-url-${block.id}-${index}`;
+
+            return (
+              <div
+                key={index}
+                className="grid grid-cols-[auto_1fr_1.5fr_auto] items-center gap-2 rounded-lg border border-border bg-card p-2"
+              >
+                <div className="flex shrink-0 items-center justify-center pl-1">
+                  {getPlatformIconComponent(link.platform)}
+                </div>
+
+                <div className="relative">
+                  <Label htmlFor={platformId} className="sr-only">
+                    Social platform {index + 1}
+                  </Label>
+                  <select
+                    id={platformId}
+                    name={`socialPlatform_${index}`}
+                    value={link.platform}
+                    onChange={(e) => handleUpdateLink(index, 'platform', e.target.value)}
+                    className="flex h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    {platformOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-3 h-4 w-4 text-muted-foreground" />
+                </div>
+
+                <div>
+                  <Label htmlFor={urlId} className="sr-only">
+                    Social URL {index + 1}
+                  </Label>
+                  <Input
+                    id={urlId}
+                    name={`socialUrl_${index}`}
+                    type="url"
+                    value={link.url}
+                    onChange={(e) => handleUpdateLink(index, 'url', e.target.value)}
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove social link ${index + 1}`}
+                  onClick={() => handleRemoveLink(index)}
+                  className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={handleAddLink}
-          className="mt-4 flex items-center gap-1 w-full justify-center"
+          className="mt-2 flex w-full items-center justify-center gap-1.5"
         >
-          <Plus className="h-4 w-4" /> Add Social Link
+          <Plus className="h-4 w-4" />
+          Add Social Link
         </Button>
       </div>
     </div>
   );
-} 
+}

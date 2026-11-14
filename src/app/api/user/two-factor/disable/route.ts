@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -42,16 +42,19 @@ export async function POST(request: NextRequest) {
     // Disable 2FA
     securitySettings.twoFactorEnabled = false;
     securitySettings.twoFactorSecret = null;
+    securitySettings.pendingTwoFactorSecret = null;
+    securitySettings.recoveryCodes = [];
     await securitySettings.save();
     
     return NextResponse.json({ 
       success: true, 
       message: 'Two-factor authentication disabled successfully' 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error disabling 2FA:', error);
+    const message = error instanceof Error ? error.message : 'Failed to disable two-factor authentication';
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to disable two-factor authentication' },
+      { success: false, message },
       { status: 500 }
     );
   }

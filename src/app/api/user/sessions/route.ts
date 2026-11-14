@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -31,12 +31,16 @@ export async function GET(request: NextRequest) {
       new mongoose.Types.ObjectId(userPayload.id)
     );
     
-    // Mark the current session
+    // Mark the current session without exposing raw session tokens
     const formattedSessions = sessions.map(session => {
-      const { token, ...sessionData } = session.toObject();
+      const sessionData = session.toObject() as unknown as Record<string, unknown>;
+      const isCurrent =
+        session.token === currentToken ||
+        Boolean(userPayload.sessionId && session.token === userPayload.sessionId);
+      delete sessionData.token;
       return {
         ...sessionData,
-        isCurrent: session.token === currentToken,
+        isCurrent,
       };
     });
     
@@ -44,10 +48,11 @@ export async function GET(request: NextRequest) {
       success: true,
       sessions: formattedSessions
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching sessions:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch sessions';
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch sessions' },
+      { success: false, message },
       { status: 500 }
     );
   }

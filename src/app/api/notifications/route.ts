@@ -17,29 +17,36 @@ export async function GET(request: NextRequest) {
     
     // Get URL params
     const searchParams = request.nextUrl.searchParams;
-    const limit = Number(searchParams.get('limit')) || 10;
-    const page = Number(searchParams.get('page')) || 1;
+    const rawLimit = Number(searchParams.get('limit'));
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(Math.trunc(rawLimit), 1), 50)
+      : 10;
+    const rawPage = Number(searchParams.get('page'));
+    const page = Number.isFinite(rawPage) ? Math.max(Math.trunc(rawPage), 1) : 1;
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
-    
+
     // Build query
-    const query: any = { userId: user.id };
+    const query: Record<string, unknown> = { userId: user.id };
     if (unreadOnly) {
       query.isRead = false;
     }
-    
-    // Fetch notifications
-    const notifications = await AppNotification.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
-    
-    // Get total count for pagination
-    const total = await AppNotification.countDocuments(query);
+
+    // Fetch notifications, filtered total, and overall unread count in parallel
+    const [notifications, total, unreadCount] = await Promise.all([
+      AppNotification.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      AppNotification.countDocuments(query),
+      AppNotification.countDocuments({ userId: user.id, isRead: false }),
+    ]);
     
     return NextResponse.json({
       success: true,
       data: {
         notifications,
+        unreadCount,
         pagination: {
           total,
           page,

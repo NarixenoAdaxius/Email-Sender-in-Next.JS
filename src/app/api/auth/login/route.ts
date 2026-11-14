@@ -2,34 +2,43 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import SecuritySettings from '@/models/SecuritySettings';
-import { generateToken, setAuthCookie, createSession } from '@/lib/auth';
+import {
+  generateToken,
+  setAuthCookie,
+  createSession,
+  generatePendingTwoFactorToken,
+  setPendingTwoFactorCookie,
+} from '@/lib/auth';
 import { loginSchema } from '@/utils/validation';
+import { enforceRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
-  console.log('Login API route called');
-  
   try {
-    // Connect to DB
+    const clientIp = getClientIp(request);
+    const ipLimited = await enforceRateLimit({
+      key: `login:ip:${clientIp}`,
+      limit: 20,
+      windowSeconds: 15 * 60,
+    });
+    if (ipLimited) return ipLimited;
+
     try {
-      console.log('Connecting to database...');
       await connectDB();
-      console.log('Database connection successful');
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
+      const details = dbError instanceof Error ? dbError.message : 'Unknown database error';
       console.error('Database connection error:', dbError);
       return NextResponse.json(
-        { 
-          error: 'Database connection failed', 
-          details: dbError.message 
+        {
+          error: 'Database connection failed',
+          details,
         },
         { status: 500 }
       );
     }
-    
-    // Parse request body
-    let body;
+
+    let body: unknown;
     try {
       body = await request.json();
-      console.log('Request body parsed:', { email: body.email });
     } catch (parseError) {
       console.error('Request parsing error:', parseError);
       return NextResponse.json(
@@ -37,110 +46,98 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
-    // Validate input
+
     const validationResult = loginSchema.safeParse(body);
     if (!validationResult.success) {
-      console.error('Validation failed:', validationResult.error.issues);
       return NextResponse.json(
-        { 
-          error: 'Validation failed', 
-          issues: validationResult.error.issues 
+        {
+          error: 'Validation failed',
+          issues: validationResult.error.issues,
         },
         { status: 400 }
       );
     }
-    
+
     const { email, password } = validationResult.data;
-    
-    // Find user by email
-    console.log('Finding user with email:', email);
+
+    const emailLimited = await enforceRateLimit({
+      key: `login:email:${email.toLowerCase()}`,
+      limit: 10,
+      windowSeconds: 15 * 60,
+    });
+    if (emailLimited) return emailLimited;
+
     const user = await User.findOne({ email });
     if (!user) {
-      console.log('User not found');
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
-    }
-    
-    // Check password
-    console.log('Checking password...');
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      console.log('Invalid password');
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    // Check if user has 2FA enabled
-    console.log('Checking if 2FA is enabled...');
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
     const securitySettings = await SecuritySettings.findOne({ userId: user._id });
-    
+
     if (securitySettings && securitySettings.twoFactorEnabled) {
-      console.log('2FA is enabled for this user, requiring verification');
-      return NextResponse.json({ 
+      const pendingToken = await generatePendingTwoFactorToken(
+        user._id.toString(),
+        user.email
+      );
+      const pendingResponse = NextResponse.json({
         requiresTwoFactor: true,
         message: 'Please enter your 2FA verification code',
-        email: user.email
+        email: user.email,
       });
+      setPendingTwoFactorCookie(pendingResponse, pendingToken);
+      return pendingResponse;
     }
-    
-    // Get IP and user agent
-    const ip = request.headers.get('x-forwarded-for') || 
-              request.headers.get('x-real-ip') || 
-              'unknown';
+
+    const ip =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
-    
-    // Create session
-    console.log('Creating session...');
+
     const sessionToken = await createSession(
       user._id.toString(),
       userAgent,
       Array.isArray(ip) ? ip[0] : ip
     );
-    
-    // Generate token with session ID
-    console.log('Generating token...');
-    console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-    console.log('User data for token:', { id: user._id, name: user.name, email: user.email });
-    
-    const token = generateToken(user, sessionToken);
-    console.log('Token generated successfully, length:', token.length);
-    
-    // Create response
-    const response = NextResponse.json(
-      { 
-        message: 'Login successful',
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        }
-      }
-    );
-    
-    // Set auth cookie
-    console.log('Setting auth cookie...');
+
+    const token = await generateToken(user, sessionToken);
+
+    const response = NextResponse.json({
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+
     setAuthCookie(response, token);
-    console.log('Auth cookie set');
-    
-    // Log all cookies for debugging
-    console.log('Response cookies:', Object.fromEntries(response.cookies.getAll().map(c => [c.name, 'hidden-value'])));
-    
-    console.log('Login successful, returning response');
+
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Login failed';
     console.error('Login error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Login failed',
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        message,
+        stack:
+          process.env.NODE_ENV === 'development' && error instanceof Error
+            ? error.stack
+            : undefined,
       },
       { status: 500 }
     );
   }
-} 
+}

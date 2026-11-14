@@ -6,7 +6,7 @@ export interface IAppNotification {
   title: string;
   message: string;
   isRead: boolean;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,8 +29,8 @@ const appNotificationSchema = new mongoose.Schema<IAppNotification>(
         'emailOpened',
         'emailClicked',
         'emailBounced',
-        'newTemplates'
-      ]
+        'newTemplates',
+      ],
     },
     title: {
       type: String,
@@ -58,7 +58,8 @@ const appNotificationSchema = new mongoose.Schema<IAppNotification>(
 appNotificationSchema.index({ userId: 1, createdAt: -1 });
 appNotificationSchema.index({ userId: 1, isRead: 1 });
 
-const AppNotification = mongoose.models.AppNotification || 
+const AppNotification =
+  mongoose.models.AppNotification ||
   mongoose.model<IAppNotification>('AppNotification', appNotificationSchema);
 
-export default AppNotification; 
+export default AppNotification;

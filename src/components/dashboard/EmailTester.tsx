@@ -2,213 +2,217 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { X } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { ChevronUp, Send, Terminal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { requestJson } from '@/components/dashboard/requestJson';
 
-// Check if we're in development environment
 const isDevelopment = process.env.NODE_ENV === 'development';
+const EMAIL_REGEX =
+  /^[^\s@<>()[\]\\,;:"']{1,64}@[^\s@<>()[\]\\.,;:"']+(?:\.[^\s@<>()[\]\\.,;:"']+)+$/;
 
-export default function EmailTester() {
-  // If we're in production, return null immediately
+interface EmailTesterProps {
+  isOpen?: boolean;
+  onToggle?: () => void;
+}
+
+export default function EmailTester({ isOpen, onToggle }: EmailTesterProps) {
+  const prefersReducedMotion = Boolean(useReducedMotion());
+  const [testEmail, setTestEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [internalOpen, setInternalOpen] = useState(true);
+
+  const isControlled = typeof isOpen === 'boolean';
+  const expanded = isControlled ? isOpen : internalOpen;
+
+  useEffect(() => {
+    if (!isDevelopment || isControlled) return;
+    const savedState = localStorage.getItem('emailTesterHidden');
+    if (savedState === 'true') {
+      setInternalOpen(false);
+    }
+  }, [isControlled]);
+
   if (!isDevelopment) {
     return null;
   }
 
-  // State for test email input
-  const [testEmail, setTestEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingEnv, setIsCheckingEnv] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [envInfo, setEnvInfo] = useState<any>(null);
-  const [isVisible, setIsVisible] = useState(true);
-
-  // Initialize visibility from localStorage on component mount
-  useEffect(() => {
-    const savedState = localStorage.getItem('emailTesterHidden');
-    if (savedState === 'true') {
-      setIsVisible(false);
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+      return;
     }
-  }, []);
-
-  // Hide the component and save state to localStorage
-  const handleHide = () => {
-    setIsVisible(false);
-    localStorage.setItem('emailTesterHidden', 'true');
+    setInternalOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem('emailTesterHidden', next ? 'false' : 'true');
+      return next;
+    });
   };
 
-  // Function to check environment variables
-  const handleCheckEnv = async () => {
-    try {
-      setIsCheckingEnv(true);
-      setError(null);
-      setEnvInfo(null);
-      
-      const response = await fetch('/api/debug/env');
-      
-      if (!response.ok) {
-        throw new Error(`Failed to check environment: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setEnvInfo(data);
-      
-      if (!data.isSmtpConfigured) {
-        setError('SMTP is not fully configured. Please check your environment variables.');
-      }
-    } catch (error: any) {
-      setError(`Error checking environment: ${error.message}`);
-      toast.error(error.message);
-    } finally {
-      setIsCheckingEnv(false);
+  const handleTestEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedEmail = testEmail.trim();
+    if (!trimmedEmail || trimmedEmail.length > 254 || !EMAIL_REGEX.test(trimmedEmail)) {
+      setError('Please enter a valid email address');
+      return;
     }
-  };
 
-  // Function to send test email
-  const handleTestEmail = async () => {
     try {
-      // Validate email format
-      if (!testEmail || !testEmail.includes('@')) {
-        setError('Please enter a valid email address');
-        return;
-      }
-      
       setIsLoading(true);
       setError(null);
       setResult(null);
-      
-      // Check environment first
-      await handleCheckEnv();
-      
-      // Send test email
-      const response = await fetch('/api/email/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+
+      await requestJson<{ message?: string }>(
+        '/api/email/test',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: trimmedEmail }),
         },
-        body: JSON.stringify({ email: testEmail }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send test email');
-      }
-      
-      setResult(`Test email sent successfully to ${testEmail}`);
+        'Failed to send test email'
+      );
+
+      setResult(`Test email sent successfully to ${trimmedEmail}`);
       toast.success('Test email sent successfully!');
-    } catch (error: any) {
-      setError(`Error sending test email: ${error.message}`);
-      toast.error(error.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to send test email';
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isVisible) {
-    return null;
-  }
-
   return (
-    <div className="mt-6 p-4 border border-gray-200 rounded-lg">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-medium">Email Configuration Tester</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Dev Only</span>
-          <button
-            onClick={handleHide}
-            className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            title="Hide email tester"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-      
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
-          <p className="font-medium">Error:</p>
-          <p>{error}</p>
-        </div>
-      )}
-      
-      {result && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-md">
-          <p className="font-medium">Success:</p>
-          <p>{result}</p>
-        </div>
-      )}
-      
-      {envInfo && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-md">
-          <p className="font-medium mb-2">Environment Info:</p>
-          <div className="text-sm font-mono bg-white p-2 rounded border border-blue-100 overflow-x-auto">
-            <p>SMTP Configuration:</p>
-            <ul className="list-disc list-inside ml-2">
-              {Object.entries(envInfo.smtpConfig).map(([key, value]: [string, any]) => (
-                <li key={key}>
-                  {key}: {value}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2">App Configuration:</p>
-            <ul className="list-disc list-inside ml-2">
-              {Object.entries(envInfo.appConfig).map(([key, value]: [string, any]) => (
-                <li key={key}>
-                  {key}: {value}
-                </li>
-              ))}
-            </ul>
+    <div className="border-t border-border pt-6">
+      {!isControlled && !expanded && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Terminal className="h-4 w-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+            <span>SMTP Email Tester</span>
+            <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+              Dev Only
+            </span>
           </div>
+          <Button type="button" variant="outline" size="sm" onClick={handleToggle}>
+            Open Tester
+          </Button>
         </div>
       )}
-      
-      <div className="flex flex-col space-y-4">
-        <div>
-          <label htmlFor="testEmail" className="block text-sm font-medium text-gray-700 mb-1">
-            Test Email Address
-          </label>
-          <div className="flex space-x-2">
-            <input
-              type="email"
-              id="testEmail"
-              value={testEmail}
-              onChange={(e) => setTestEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm flex-1 focus:outline-none focus:ring-primary focus:border-primary"
-            />
-            <button
-              onClick={handleTestEmail}
-              disabled={isLoading || !testEmail}
-              className="px-4 py-2 bg-primary text-white rounded-md shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Sending...' : 'Send Test Email'}
-            </button>
-          </div>
-          <p className="mt-1 text-sm text-gray-500">
-            This will send a test email to verify your SMTP configuration.
-          </p>
-        </div>
-        
-        <div className="flex justify-end">
-          <button
-            onClick={handleCheckEnv}
-            disabled={isCheckingEnv}
-            className="px-4 py-2 bg-gray-100 text-gray-800 border border-gray-300 rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            id="smtp-email-tester-panel"
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            transition={
+              prefersReducedMotion
+                ? { duration: 0.12 }
+                : { type: 'spring', bounce: 0, duration: 0.3 }
+            }
+            className="overflow-hidden"
           >
-            {isCheckingEnv ? 'Checking...' : 'Check Environment'}
-          </button>
-        </div>
-      </div>
-      
-      <div className="mt-4 text-sm text-gray-500">
-        <p>Note: Make sure you have set up the following in your .env file:</p>
-        <ul className="list-disc list-inside ml-2 mt-1">
-          <li>SMTP_HOST</li>
-          <li>SMTP_PORT</li>
-          <li>SMTP_USER</li>
-          <li>SMTP_PASSWORD</li>
-        </ul>
-      </div>
+            <div className="rounded-xl border border-border bg-muted/30 p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                    <Terminal className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        SMTP Email Tester
+                      </h3>
+                      <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                        Dev Only
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Send a quick test message to verify SMTP delivery.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggle}
+                  className="h-8 gap-1.5 rounded-full text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <span>Collapse</span>
+                  <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+                </Button>
+              </div>
+
+              {error && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-red-700 dark:text-red-400"
+                >
+                  <p className="font-medium">Unable to send test email</p>
+                  <p className="mt-0.5 opacity-90">{error}</p>
+                </div>
+              )}
+
+              {result && (
+                <div
+                  role="status"
+                  className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-400"
+                >
+                  <p className="font-medium">Test email dispatched</p>
+                  <p className="mt-0.5 opacity-90">{result}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleTestEmail} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="testEmail" className="text-sm font-medium text-foreground">
+                    Test Email Address
+                  </Label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      type="email"
+                      id="testEmail"
+                      name="testEmail"
+                      autoComplete="email"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      disabled={isLoading}
+                      className="flex-1 bg-background"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isLoading || !testEmail.trim()}
+                      className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                    >
+                      <Send className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                      {isLoading ? 'Sending...' : 'Send Test Email'}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+
+              <p className="mt-3 text-xs text-muted-foreground">
+                Requires <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">SMTP_HOST</code>,{' '}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">SMTP_PORT</code>,{' '}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">SMTP_USER</code>, and{' '}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">SMTP_PASSWORD</code> in{' '}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">.env</code>.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-} 
+}

@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { BlockContent, TemplateBlock } from '../types';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface ButtonContentEditorProps {
   block: TemplateBlock;
@@ -9,33 +11,40 @@ interface ButtonContentEditorProps {
 }
 
 export function ButtonContentEditor({ block, onUpdateContent }: ButtonContentEditorProps) {
+  const textId = `button-text-${block.id}`;
+  const urlId = `button-url-${block.id}`;
+
   return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="space-y-2">
+        <Label htmlFor={textId} className="text-foreground">
           Button Text
-        </label>
-        <input
+        </Label>
+        <Input
+          id={textId}
+          name="buttonText"
           type="text"
           value={block.content.text || ''}
           onChange={(e) => onUpdateContent(block.id, { text: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+          placeholder="e.g., Get Started"
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="space-y-2">
+        <Label htmlFor={urlId} className="text-foreground">
           Button URL
-        </label>
-        <input
+        </Label>
+        <Input
+          id={urlId}
+          name="buttonUrl"
           type="text"
           value={block.content.url || ''}
           onChange={(e) => onUpdateContent(block.id, { url: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+          placeholder="https://example.com or {{actionLink}}"
         />
-        <p className="mt-1 text-xs text-gray-500">
-          You can use variables like {'{{'}<span>variableName</span>{'}}'} in the URL
+        <p className="text-xs text-muted-foreground">
+          You can use variables like <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{'{{variableName}}'}</code> in the URL.
         </p>
       </div>
     </div>
   );
-} 
+}

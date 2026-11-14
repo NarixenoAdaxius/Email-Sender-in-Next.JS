@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
     
-    const user = getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     
     // Check if user is authenticated
     if (!user || !user.id) {
@@ -46,10 +46,11 @@ export async function GET(req: NextRequest) {
       success: true,
       preferences
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching notification preferences:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: `Failed to fetch notification preferences: ${error.message}` },
+      { error: `Failed to fetch notification preferences: ${message}` },
       { status: 500 }
     );
   }
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectToDatabase();
     
-    const user = getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     
     // Check if user is authenticated
     if (!user || !user.id) {
@@ -112,10 +113,11 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Notification preferences updated successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating notification preferences:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: `Failed to update notification preferences: ${error.message}` },
+      { error: `Failed to update notification preferences: ${message}` },
       { status: 500 }
     );
   }

@@ -3,7 +3,12 @@ import mongoose from 'mongoose';
 export interface ISecuritySettings {
   userId: mongoose.Schema.Types.ObjectId;
   twoFactorEnabled: boolean;
-  twoFactorSecret?: string;
+  twoFactorSecret?: string | null;
+  pendingTwoFactorSecret?: string | null;
+  failedTwoFactorAttempts?: number;
+  twoFactorLockUntil?: Date | null;
+  lastVerifiedTotpStep?: number | null;
+  recoveryCodes?: string[];
   activeSessions?: string[];
   lastPasswordChange?: Date;
   createdAt: Date;
@@ -25,6 +30,26 @@ const securitySettingsSchema = new mongoose.Schema<ISecuritySettings>(
     twoFactorSecret: {
       type: String,
       default: null,
+    },
+    pendingTwoFactorSecret: {
+      type: String,
+      default: null,
+    },
+    failedTwoFactorAttempts: {
+      type: Number,
+      default: 0,
+    },
+    twoFactorLockUntil: {
+      type: Date,
+      default: null,
+    },
+    lastVerifiedTotpStep: {
+      type: Number,
+      default: null,
+    },
+    recoveryCodes: {
+      type: [String],
+      default: [],
     },
     activeSessions: {
       type: [String],

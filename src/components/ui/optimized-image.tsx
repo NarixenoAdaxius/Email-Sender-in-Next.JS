@@ -1,7 +1,7 @@
 "use client";
 
-import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import Image from "next/image";
+import React, { useState, useEffect } from "react";
 
 interface OptimizedImageProps {
   src: string;
@@ -9,6 +9,7 @@ interface OptimizedImageProps {
   width?: number;
   height?: number;
   className?: string;
+  style?: React.CSSProperties;
   priority?: boolean;
 }
 
@@ -17,64 +18,45 @@ export default function OptimizedImage({
   alt,
   width,
   height,
-  className = '',
+  className = "",
+  style,
   priority = false,
 }: OptimizedImageProps) {
   const [imgSrc, setImgSrc] = useState<string>(src);
-  const [isLocal, setIsLocal] = useState<boolean>(true);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [isLocal, setIsLocal] = useState<boolean>(!src.startsWith("http"));
   const [hasError, setHasError] = useState<boolean>(false);
 
   useEffect(() => {
-    // Special case for PaletteMail logo, which is problematic
-    if (src.includes('PaletteMail') && src.endsWith('.svg')) {
-      setImgSrc('/logo.svg');
-    } else {
-      setImgSrc(src);
-    }
-    
-    // Reset states when src changes
-    setIsLoaded(false);
+    setImgSrc(src);
     setHasError(false);
-    
-    // Check if image is from external source or local
-    setIsLocal(!src.startsWith('http'));
+    setIsLocal(!src.startsWith("http"));
   }, [src]);
 
   const handleError = () => {
-    console.warn(`Image failed to load: ${imgSrc}`);
     setHasError(true);
-    
-    // Use fallback logo for any PaletteMail image that fails
-    if (src.includes('PaletteMail')) {
-      setImgSrc('/logo.svg');
+    if (src.includes("logo")) {
+      setImgSrc("/logo.svg");
     } else {
-      // Fallback to a placeholder image if all else fails
-      setImgSrc('/icons/image-placeholder.svg');
+      setImgSrc("/icons/image-placeholder.svg");
     }
   };
 
-  const handleLoad = () => {
-    setIsLoaded(true);
-  };
-
-  // For external images or after fallback, use a standard img tag with error handling
   if (!isLocal || hasError) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={imgSrc}
         alt={alt}
         width={width}
         height={height}
         className={className}
+        style={style}
         onError={handleError}
-        onLoad={handleLoad}
         loading={priority ? "eager" : "lazy"}
       />
     );
   }
 
-  // For local images, use Next.js Image component
   return (
     <Image
       src={imgSrc}
@@ -82,10 +64,10 @@ export default function OptimizedImage({
       width={width || 100}
       height={height || 100}
       className={className}
+      style={style}
       priority={priority}
       onError={handleError}
-      onLoad={handleLoad}
-      unoptimized={src.endsWith('.svg')}
+      unoptimized={src.endsWith(".svg")}
     />
   );
-} 
+}

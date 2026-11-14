@@ -2,63 +2,74 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import SecuritySettings from '@/models/SecuritySettings';
+import { getUserFromRequest, verifyPendingTwoFactorToken } from '@/lib/auth';
 import { z } from 'zod';
 
-// Validation schema for checking 2FA
 const check2FASchema = z.object({
-  email: z.string().email()
+  email: z.string().email(),
 });
 
 export async function POST(request: NextRequest) {
   try {
-    // Connect to DB
     await connectDB();
-    
-    // Parse request body
-    const data = await request.json();
-    
-    // Validate input
+
+    const data: unknown = await request.json();
+
     const validationResult = check2FASchema.safeParse(data);
     if (!validationResult.success) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Validation failed', 
-          issues: validationResult.error.issues 
+        {
+          success: false,
+          message: 'Validation failed',
+          issues: validationResult.error.issues,
         },
         { status: 400 }
       );
     }
-    
+
     const { email } = validationResult.data;
-    
-    // Find user by email
-    const user = await User.findOne({ email });
-    if (!user) {
-      // For security reasons, don't reveal if user doesn't exist
+
+    // Require either an authenticated user or a valid pending_2fa session for this email
+    const authUser = await getUserFromRequest(request);
+    const pendingToken = request.cookies.get('pending_2fa')?.value;
+    const pendingPayload = pendingToken
+      ? await verifyPendingTwoFactorToken(pendingToken)
+      : null;
+
+    const authorizedEmail =
+      authUser?.email.toLowerCase() === email.toLowerCase() ||
+      pendingPayload?.email.toLowerCase() === email.toLowerCase();
+
+    if (!authorizedEmail) {
       return NextResponse.json(
-        { success: true, requiresTwoFactor: false }
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
       );
     }
-    
-    // Find security settings
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return NextResponse.json({
+        success: true,
+        requiresTwoFactor: false,
+      });
+    }
+
     const securitySettings = await SecuritySettings.findOne({ userId: user._id });
-    
-    // Check if 2FA is enabled for this user
     const requiresTwoFactor = !!(securitySettings && securitySettings.twoFactorEnabled);
-    
+
     return NextResponse.json({
       success: true,
-      requiresTwoFactor
+      requiresTwoFactor,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error checking 2FA:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'An error occurred while checking two-factor authentication status' 
+      {
+        success: false,
+        message: 'An error occurred while checking two-factor authentication status',
       },
       { status: 500 }
     );
   }
-} 
+}

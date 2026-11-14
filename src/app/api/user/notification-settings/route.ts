@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -41,13 +41,13 @@ export async function GET(request: NextRequest) {
     }
     
     return NextResponse.json({
-      email: settings.email,
       app: settings.app
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching notification settings:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch notification settings';
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch notification settings' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -88,14 +88,7 @@ export async function PUT(request: NextRequest) {
     }
     
     // Update settings with new data
-    if (data.email) {
-      settings.email = {
-        ...settings.email,
-        ...data.email
-      };
-    }
-    
-    if (data.app) {
+    if (data.app && typeof data.app === 'object') {
       settings.app = {
         ...settings.app,
         ...data.app
@@ -107,14 +100,14 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       settings: {
-        email: settings.email,
         app: settings.app
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating notification settings:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update notification settings';
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to update notification settings' },
+      { success: false, message },
       { status: 500 }
     );
   }

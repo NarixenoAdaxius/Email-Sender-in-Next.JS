@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { getUserFromRequest } from '@/lib/auth';
+import { getUserFromRequest, generateToken, setAuthCookie } from '@/lib/auth';
 import User from '@/models/User';
 import UserProfile from '@/models/UserProfile';
 
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -52,10 +52,11 @@ export async function GET(request: NextRequest) {
       profilePicture: userProfile.profilePicture || '',
       timezone: userProfile.timezone || 'UTC+00:00'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching user profile:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch user profile';
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch user profile' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -67,7 +68,7 @@ export async function PUT(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -89,8 +90,10 @@ export async function PUT(request: NextRequest) {
     }
     
     // Update name in user model
-    if (data.name) {
-      user.name = data.name;
+    const nextName = typeof data.name === 'string' ? data.name.trim() : '';
+    const nameChanged = Boolean(nextName && nextName !== user.name);
+    if (nameChanged) {
+      user.name = nextName;
       await user.save();
     }
     
@@ -102,24 +105,16 @@ export async function PUT(request: NextRequest) {
     }
     
     // Update profile fields
-    const fieldsToUpdate = [
-      'jobTitle',
-      'company',
-      'location',
-      'phone',
-      'bio',
-      'timezone'
-    ];
-    
-    fieldsToUpdate.forEach(field => {
-      if (data[field] !== undefined) {
-        userProfile[field] = data[field];
-      }
-    });
+    if (data.jobTitle !== undefined) userProfile.jobTitle = data.jobTitle;
+    if (data.company !== undefined) userProfile.company = data.company;
+    if (data.location !== undefined) userProfile.location = data.location;
+    if (data.phone !== undefined) userProfile.phone = data.phone;
+    if (data.bio !== undefined) userProfile.bio = data.bio;
+    if (data.timezone !== undefined) userProfile.timezone = data.timezone;
     
     await userProfile.save();
     
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       success: true, 
       message: 'Profile updated successfully',
       profile: {
@@ -134,10 +129,18 @@ export async function PUT(request: NextRequest) {
         timezone: userProfile.timezone
       }
     });
-  } catch (error: any) {
+
+    if (nameChanged) {
+      const refreshedToken = await generateToken(user, userPayload.sessionId);
+      setAuthCookie(response, refreshedToken);
+    }
+
+    return response;
+  } catch (error: unknown) {
     console.error('Error updating user profile:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update user profile';
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to update user profile' },
+      { success: false, message },
       { status: 500 }
     );
   }

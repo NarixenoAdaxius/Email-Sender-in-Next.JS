@@ -6,8 +6,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-fira-mono);
-  --font-mono: var(--font-fira-mono);
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-fira-mono), "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -25,6 +25,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -41,82 +42,228 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --background: #ffffff;
   --foreground: #3F4555;
   --card: #ffffff;
   --card-foreground: #3F4555;
   --popover: #ffffff;
   --popover-foreground: #3F4555;
-  --primary: #3F4555;
+  --primary: #4F46E5;
   --primary-foreground: #ffffff;
-  --secondary: #9FA6B9;
+  --secondary: #F1F4F9;
   --secondary-foreground: #3F4555;
-  --muted: #f3f4f6;
-  --muted-foreground: #9FA6B9;
-  --accent: #9FA6B9;
-  --accent-foreground: #3F4555;
-  --destructive: #ef4444;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #3F4555;
-  --chart-1: #3F4555;
-  --chart-2: #5565B8;
-  --chart-3: #9FA6B9;
-  --chart-4: #83A1F2;
-  --chart-5: #9FA6B9;
+  --muted: #F4F6FA;
+  --muted-foreground: #64748B;
+  --accent: #F1F5F9;
+  --accent-foreground: #1E293B;
+  --destructive: #B91C1C;
+  --destructive-foreground: #ffffff;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #4F46E5;
+  --surface-glass: rgba(255, 255, 255, 0.78);
+  --surface-glass-elevated: rgba(255, 255, 255, 0.9);
+  --chart-1: #4F46E5;
+  --chart-2: #6366F1;
+  --chart-3: #3F4555;
+  --chart-4: #818CF8;
+  --chart-5: #94A3B8;
   --sidebar: #ffffff;
   --sidebar-foreground: #3F4555;
-  --sidebar-primary: #3F4555;
+  --sidebar-primary: #4F46E5;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3f4f6;
+  --sidebar-accent: #F4F6FA;
   --sidebar-accent-foreground: #3F4555;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: #3F4555;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #4F46E5;
 }
 
 .dark {
-  --background: #1e1e2e;
-  --foreground: #ffffff;
-  --card: #2a2a3c;
-  --card-foreground: #ffffff;
-  --popover: #2a2a3c;
-  --popover-foreground: #ffffff;
-  --primary: #9FA6B9;
-  --primary-foreground: #3F4555;
-  --secondary: #3F4555;
-  --secondary-foreground: #ffffff;
-  --muted: #272736;
-  --muted-foreground: #9FA6B9;
-  --accent: #3F4555;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+  --background: #0B0D14;
+  --foreground: #F1F5F9;
+  --card: #131622;
+  --card-foreground: #F1F5F9;
+  --popover: #171B2A;
+  --popover-foreground: #F1F5F9;
+  --primary: #4F46E5;
+  --primary-foreground: #ffffff;
+  --secondary: #1E2334;
+  --secondary-foreground: #E2E8F0;
+  --muted: #1A1E2E;
+  --muted-foreground: #94A3B8;
+  --accent: #1E2334;
+  --accent-foreground: #F8FAFC;
+  --destructive: #F87171;
+  --destructive-foreground: #0B0D14;
   --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: #9FA6B9;
-  --chart-1: #9FA6B9;
-  --chart-2: #83A1F2;
-  --chart-3: #5565B8;
-  --chart-4: #3F4555;
-  --chart-5: #9FA6B9;
-  --sidebar: #2a2a3c;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #9FA6B9;
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #818CF8;
+  --surface-glass: rgba(19, 22, 34, 0.78);
+  --surface-glass-elevated: rgba(19, 22, 34, 0.9);
+  --chart-1: #818CF8;
+  --chart-2: #6366F1;
+  --chart-3: #A5B4FC;
+  --chart-4: #4F46E5;
+  --chart-5: #94A3B8;
+  --sidebar: #131622;
+  --sidebar-foreground: #F1F5F9;
+  --sidebar-primary: #4F46E5;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #272736;
-  --sidebar-accent-foreground: #ffffff;
+  --sidebar-accent: #1A1E2E;
+  --sidebar-accent-foreground: #F8FAFC;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #9FA6B9;
+  --sidebar-ring: #818CF8;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Apple-inspired translucent materials & typography helpers */
+.apple-glass {
+  background-color: var(--surface-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.apple-glass-elevated {
+  background-color: var(--surface-glass-elevated);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Smooth scrolling only when user hasn't requested reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Coarse pointer (touch screen) minimum 44x44px comfortable tap targets */
+@media (pointer: coarse) {
+  button:not([data-compact="true"]):not(.cm-button):not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not(.cm-textfield):not([data-compact="true"]),
+  select:not([data-compact="true"]),
+  [role="menuitem"]:not([data-compact="true"]),
+  [role="option"]:not([data-compact="true"]),
+  #mobile-navigation-drawer a:not([data-compact="true"]) {
+    min-height: 44px;
+  }
+
+  [data-slot="button"]:not([data-compact="true"]):not(.cm-button):not([role="switch"]):not([role="checkbox"]):not([role="radio"]) {
+    min-width: 44px;
+  }
+}
+
+/* Apple HIG §14: Reduced motion — scale down animations and transitions while disabling spatial transforms */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-slot="button"] {
+    transform: none !important;
+  }
+}
+
+/* Apple HIG §14: Reduced transparency — solidify glass chrome */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --surface-glass: #ffffff;
+    --surface-glass-elevated: #ffffff;
+  }
+
+  .dark {
+    --surface-glass: #131622;
+    --surface-glass-elevated: #131622;
+  }
+
+  .apple-glass,
+  .apple-glass-elevated,
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--card) !important;
+  }
+}
+
+/* Apple HIG §14: Increased contrast — strengthen text & border legibility */
+@media (prefers-contrast: more) {
+  :root {
+    --foreground: #0F172A;
+    --muted-foreground: #334155;
+    --border: #94A3B8;
+    --input: #64748B;
+    --surface-glass: #ffffff;
+    --surface-glass-elevated: #ffffff;
+  }
+
+  .dark {
+    --foreground: #ffffff;
+    --muted-foreground: #CBD5E1;
+    --border: rgba(255, 255, 255, 0.35);
+    --input: rgba(255, 255, 255, 0.45);
+    --surface-glass: #0B0D14;
+    --surface-glass-elevated: #131622;
+  }
+}
+
+/* React Toastify integration with semantic light/dark surfaces */
+.Toastify__toast-container {
+  z-index: 60;
+}
+
+.Toastify__toast {
+  border-radius: 0.875rem !important;
+  border: 1px solid var(--border);
+  background: var(--surface-glass-elevated) !important;
+  color: var(--card-foreground) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.18) !important;
+  font-family: var(--font-sans) !important;
+}
+
+.dark .Toastify__toast {
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55) !important;
+}
+
+.Toastify__close-button {
+  color: var(--muted-foreground) !important;
 }

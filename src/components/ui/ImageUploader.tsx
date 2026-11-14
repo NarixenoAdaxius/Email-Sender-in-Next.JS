@@ -62,7 +62,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-        } catch (e) {
+        } catch {
           // Unable to parse error message, use default
         }
         throw new Error(errorMessage);
@@ -77,9 +77,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setImageUrl(data.imageUrl);
       onImageSelected(data.imageUrl);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error uploading image:', error);
-      setError(error.message || 'Error uploading image');
+      setError(error instanceof Error ? error.message : 'Error uploading image');
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -131,7 +131,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-        } catch (e) {
+        } catch {
           // Unable to parse error message, use default
         }
         throw new Error(errorMessage);
@@ -146,9 +146,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setImageUrl(data.imageUrl);
       onImageSelected(data.imageUrl);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error processing image URL:', error);
-      setError(error.message || 'Error processing image URL');
+      setError(error instanceof Error ? error.message : 'Error processing image URL');
     } finally {
       setIsUploading(false);
     }
@@ -199,7 +199,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     <div className={`space-y-4 ${className}`}>
       {imageUrl ? (
         <div className="relative">
-          <div className="relative rounded-md overflow-hidden border border-gray-200">
+          <div className="relative rounded-xl overflow-hidden border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={imageUrl} 
@@ -207,14 +207,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               className="w-full h-auto max-h-[300px] object-contain" 
             />
             <button 
+              type="button"
               onClick={clearImage}
-              className="absolute top-2 right-2 p-1 bg-white/80 hover:bg-white rounded-full text-gray-700 hover:text-red-500 transition-colors"
+              aria-label="Remove image"
+              className="absolute top-2 right-2 p-1.5 bg-background/85 backdrop-blur-sm hover:bg-background rounded-full text-foreground/80 hover:text-destructive transition-colors cursor-pointer shadow-xs"
               title="Remove image"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-1 break-all">{imageUrl}</p>
+          <p className="text-xs text-muted-foreground mt-1 break-all">{imageUrl}</p>
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'url')} className="w-full">
@@ -225,7 +227,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           
           <TabsContent value="upload" className="space-y-4 py-4">
             <div 
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+              className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-accent/50 transition-colors cursor-pointer"
               onClick={triggerFileUpload}
             >
               <input
@@ -236,9 +238,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 onChange={handleFileChange}
               />
               <div className="flex flex-col items-center justify-center">
-                <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-                <p className="text-sm text-gray-600 mb-1">Drag and drop an image, or click to select</p>
-                <p className="text-xs text-gray-500">JPEG, PNG, GIF, WebP up to 5MB</p>
+                <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="text-sm text-foreground/85 mb-1">Drag and drop an image, or click to select</p>
+                <p className="text-xs text-muted-foreground">JPEG, PNG, GIF, WebP up to 5MB</p>
               </div>
             </div>
             
@@ -281,6 +283,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     type="submit" 
                     size="sm" 
                     disabled={isUploading || !externalUrl}
+                    aria-label="Fetch image from URL"
                   >
                     {isUploading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -289,7 +292,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Enter a direct URL to an image (JPG, PNG, GIF, WebP)
                 </p>
               </div>
@@ -299,7 +302,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       )}
       
       {error && (
-        <div className="text-sm text-red-500 mt-2">
+        <div role="alert" className="text-sm text-destructive mt-2">
           {error}
         </div>
       )}

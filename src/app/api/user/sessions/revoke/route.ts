@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -51,10 +51,13 @@ export async function POST(request: NextRequest) {
     const { sessionId, revokeAll } = validationResult.data;
     const userId = new mongoose.Types.ObjectId(userPayload.id);
     const currentToken = getTokenFromRequest(request);
+    const activeSessionTokens = [currentToken, userPayload.sessionId].filter(
+      (tokenValue): tokenValue is string => Boolean(tokenValue)
+    );
     
     // Check if we should revoke all other sessions
     if (revokeAll) {
-      if (!currentToken) {
+      if (activeSessionTokens.length === 0) {
         return NextResponse.json(
           { success: false, message: 'Current session not found' },
           { status: 400 }
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
       await Session.updateMany(
         {
           userId,
-          token: { $ne: currentToken },
+          token: { $nin: activeSessionTokens },
           isRevoked: false
         },
         {
@@ -81,6 +84,13 @@ export async function POST(request: NextRequest) {
     
     // Revoke a specific session
     if (sessionId) {
+      if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid session ID' },
+          { status: 400 }
+        );
+      }
+
       const session = await Session.findOne({
         _id: new mongoose.Types.ObjectId(sessionId),
         userId
@@ -94,7 +104,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Don't allow revoking the current session
-      if (session.token === currentToken) {
+      if (activeSessionTokens.includes(session.token)) {
         return NextResponse.json(
           { success: false, message: 'Cannot revoke current session' },
           { status: 400 }
@@ -116,10 +126,11 @@ export async function POST(request: NextRequest) {
       { success: false, message: 'Invalid request' },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error revoking session:', error);
+    const message = error instanceof Error ? error.message : 'Failed to revoke session';
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to revoke session' },
+      { success: false, message },
       { status: 500 }
     );
   }

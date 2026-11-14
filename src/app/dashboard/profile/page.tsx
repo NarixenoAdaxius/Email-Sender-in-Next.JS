@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfileSettings from '@/components/profile/ProfileSettings';
 import SecuritySettings from '@/components/profile/SecuritySettings';
@@ -10,17 +11,24 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('profile');
 
   return (
-    <div className="container mx-auto py-10">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
+      className="container mx-auto px-4 py-8"
+    >
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Account Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your account settings and preferences
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          Account Settings
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Manage your personal profile, security controls, and notification preferences.
         </p>
       </div>
 
       <div className="space-y-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full md:w-auto border-b">
+          <TabsList className="w-full justify-start md:w-auto">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -36,6 +44,6 @@ export default function ProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </motion.div>
   );
-} 
+}

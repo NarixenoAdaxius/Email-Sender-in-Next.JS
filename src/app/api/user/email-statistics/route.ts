@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -86,10 +86,11 @@ export async function GET(request: NextRequest) {
     const stats = generateMockStats(timeRange);
     
     return NextResponse.json({ stats });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching email statistics:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch email statistics';
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch email statistics' },
+      { error: message },
       { status: 500 }
     );
   }

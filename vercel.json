@@ -1,45 +1,60 @@
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "buildCommand": "npm run build:vercel"
-      }
-    }
-  ],
-  "env": {
-    "NEXT_DISABLE_ESLINT_DURING_BUILDS": "true",
-    "SKIP_TYPE_CHECK": "true"
-  },
-  "headers": [
-    {
-      "source": "/favicon.ico",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/logo.svg",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/favicon-icon.svg",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    }
-  ]
-} 
+﻿{
+    "version":  2,
+    "builds":  [
+                   {
+                       "src":  "package.json",
+                       "use":  "@vercel/next",
+                       "config":  {
+                                      "buildCommand":  "npm run build"
+                                  }
+                   }
+               ],
+    "headers":  [
+                    {
+                        "source":  "/(.*)",
+                        "headers":  [
+                                        {
+                                            "key":  "X-Content-Type-Options",
+                                            "value":  "nosniff"
+                                        },
+                                        {
+                                            "key":  "Referrer-Policy",
+                                            "value":  "strict-origin-when-cross-origin"
+                                        }
+                                    ]
+                    },
+                    {
+                        "source":  "/favicon.ico",
+                        "headers":  [
+                                        {
+                                            "key":  "Cache-Control",
+                                            "value":  "public, max-age=0, must-revalidate"
+                                        }
+                                    ]
+                    },
+                    {
+                        "source":  "/logo.svg",
+                        "headers":  [
+                                        {
+                                            "key":  "Cache-Control",
+                                            "value":  "public, max-age=0, must-revalidate"
+                                        }
+                                    ]
+                    },
+                    {
+                        "source":  "/favicon-icon.svg",
+                        "headers":  [
+                                        {
+                                            "key":  "Cache-Control",
+                                            "value":  "public, max-age=0, must-revalidate"
+                                        }
+                                    ]
+                    }
+                ],
+    "crons":  [
+                  {
+                      "path":  "/api/cron/process-scheduled",
+                      "schedule":  "0 8 * * *"
+                  }
+              ]
+}

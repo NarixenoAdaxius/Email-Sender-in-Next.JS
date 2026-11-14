@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { BlockContent, TemplateBlock } from '../types';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface QuoteContentEditorProps {
   block: TemplateBlock;
@@ -9,36 +12,42 @@ interface QuoteContentEditorProps {
 }
 
 export function QuoteContentEditor({ block, onUpdateContent }: QuoteContentEditorProps) {
+  const quoteTextId = `quote-text-${block.id}`;
+  const quoteAuthorId = `quote-author-${block.id}`;
+  const authorValue = block.content.quoteAuthor ?? block.content.citation ?? '';
+
   return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="space-y-2">
+        <Label htmlFor={quoteTextId} className="text-foreground">
           Quote Text
-        </label>
-        <textarea
+        </Label>
+        <Textarea
+          id={quoteTextId}
+          name="quoteText"
           value={block.content.text || ''}
           onChange={(e) => onUpdateContent(block.id, { text: e.target.value })}
           rows={4}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
           placeholder="Enter quote text here..."
         />
-        <p className="mt-1 text-xs text-gray-500">
-          You can use variables like {'{recipient_name}'} for dynamic content.
+        <p className="text-xs text-muted-foreground">
+          Use <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{'{{variableName}}'}</code> for dynamic content.
         </p>
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Citation
-        </label>
-        <input
+
+      <div className="space-y-2">
+        <Label htmlFor={quoteAuthorId} className="text-foreground">
+          Author / Attribution
+        </Label>
+        <Input
+          id={quoteAuthorId}
+          name="quoteAuthor"
           type="text"
-          value={block.content.citation || ''}
-          onChange={(e) => onUpdateContent(block.id, { citation: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-          placeholder="- Author Name"
+          value={authorValue}
+          onChange={(e) => onUpdateContent(block.id, { quoteAuthor: e.target.value })}
+          placeholder="e.g., Jane Doe"
         />
       </div>
     </div>
   );
-} 
+}

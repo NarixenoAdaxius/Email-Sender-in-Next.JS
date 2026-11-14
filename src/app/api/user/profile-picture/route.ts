@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectDB from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
 import User from '@/models/User';
 import UserProfile from '@/models/UserProfile';
 import Image from '@/models/Image';
+import { hasValidImageMagicBytes } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +13,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -57,7 +59,14 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate file size (max 5MB)
+    // Validate file size (non-empty and max 5MB)
+    if (file.size === 0) {
+      return NextResponse.json(
+        { error: 'Uploaded image file is empty' },
+        { status: 400 }
+      );
+    }
+
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: 'File size should be less than 5MB' },
@@ -69,6 +78,13 @@ export async function POST(request: NextRequest) {
       // Convert file to buffer
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
+
+      if (buffer.length === 0 || !hasValidImageMagicBytes(buffer, file.type)) {
+        return NextResponse.json(
+          { error: 'Uploaded file signature does not match the declared image type.' },
+          { status: 400 }
+        );
+      }
       
       // Save to MongoDB instead of Cloudinary
       const newImage = new Image({
@@ -99,17 +115,19 @@ export async function POST(request: NextRequest) {
         success: true,
         profilePicture: imageUrl
       });
-    } catch (uploadError: any) {
+    } catch (uploadError: unknown) {
       console.error('Error saving image:', uploadError);
+      const message = uploadError instanceof Error ? uploadError.message : 'Failed to upload image';
       return NextResponse.json(
-        { error: uploadError.message || 'Failed to upload image' },
+        { error: message },
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error uploading profile picture:', error);
+    const message = error instanceof Error ? error.message : 'Failed to upload profile picture';
     return NextResponse.json(
-      { error: error.message || 'Failed to upload profile picture' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -124,7 +142,7 @@ export async function DELETE(request: NextRequest) {
     await connectDB();
     
     // Get the current user from the token
-    const userPayload = getUserFromRequest(request);
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -158,9 +176,9 @@ export async function DELETE(request: NextRequest) {
     const profilePictureUrl = userProfile.profilePicture;
     const imageId = profilePictureUrl.split('/').pop();
     
-    if (imageId) {
+    if (imageId && mongoose.Types.ObjectId.isValid(imageId)) {
       // Delete the image from the database
-      await Image.findByIdAndDelete(imageId);
+      await Image.findOneAndDelete({ _id: imageId, userId: user._id });
     }
     
     // Update user profile to remove profile picture reference
@@ -172,10 +190,11 @@ export async function DELETE(request: NextRequest) {
       message: 'Profile picture removed successfully'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error removing profile picture:', error);
+    const message = error instanceof Error ? error.message : 'Failed to remove profile picture';
     return NextResponse.json(
-      { error: error.message || 'Failed to remove profile picture' },
+      { error: message },
       { status: 500 }
     );
   }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import NotificationSettings from '@/components/profile/NotificationSettings';
@@ -9,21 +9,30 @@ import { TestNotificationForm } from '@/components/profile/TestNotificationForm'
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
-  
+
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex items-center gap-2 mb-6">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
+      className="container mx-auto px-4 py-8"
+    >
+      <div className="mb-6 flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Go back"
           onClick={() => router.back()}
-          className="mr-2"
+          className="mr-1"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Button>
-        <h1 className="text-2xl font-bold">Notification Settings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Notification Settings
+        </h1>
       </div>
-      
+
       <div className="grid gap-8 md:grid-cols-2">
         <div>
           <NotificationSettings />
@@ -32,6 +41,6 @@ export default function NotificationSettingsPage() {
           <TestNotificationForm />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
-} 
+}

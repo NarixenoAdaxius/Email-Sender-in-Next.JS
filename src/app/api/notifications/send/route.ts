@@ -6,11 +6,19 @@ import { z } from 'zod';
 
 // Validation schema for sending notifications
 const sendNotificationSchema = z.object({
-  type: z.string(),
+  type: z.enum([
+    'newFeatures',
+    'security',
+    'emailSent',
+    'emailOpened',
+    'emailClicked',
+    'emailBounced',
+    'newTemplates',
+  ]),
+  title: z.string().optional(),
   subject: z.string().optional(),
-  message: z.string(),
-  userId: z.string().optional(),
-  data: z.record(z.any()).optional(),
+  message: z.string().min(1),
+  data: z.record(z.unknown()).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -18,8 +26,8 @@ export async function POST(request: NextRequest) {
     // Connect to DB
     await connectDB();
     
-    // Get the current user from the token (admin or the same user)
-    const userPayload = getUserFromRequest(request);
+    // Get the current user from the token
+    const userPayload = await getUserFromRequest(request);
     
     if (!userPayload) {
       return NextResponse.json(
@@ -44,13 +52,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { type, subject, message, userId = userPayload.id, data: notificationData = {} } = validationResult.data;
+    const { type, title, subject, message, data: notificationData = {} } = validationResult.data;
     
-    // Send notification
+    // Send notification scoped to the authenticated user
     const result = await sendNotification({
-      userId,
+      userId: userPayload.id,
       type: type as NotificationType,
-      subject,
+      title: title || subject,
       message,
       data: notificationData,
     });
@@ -66,10 +74,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Notification sent successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending notification:', error);
+    const message = error instanceof Error ? error.message : 'Failed to send notification';
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to send notification' },
+      { success: false, message },
       { status: 500 }
     );
   }

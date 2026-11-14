@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export type TemplateDesignMode = 'studio' | 'visual' | 'code' | 'custom';
+
 export interface IEmailTemplate extends Document {
   userId: mongoose.Types.ObjectId;
   name: string;
@@ -9,7 +11,9 @@ export interface IEmailTemplate extends Document {
   css: string;
   variables: string[];
   isPublic: boolean;
-  blocks?: any[];
+  designMode?: TemplateDesignMode;
+  blocks?: Record<string, unknown>[] | null;
+  theme?: Record<string, unknown> | null;
   createdAt: Date;
   updatedAt: Date;
   content?: string;
@@ -29,7 +33,7 @@ const EmailTemplateSchema = new Schema<IEmailTemplate>(
     },
     description: {
       type: String,
-      required: [true, 'Please provide a template description'],
+      default: '',
       trim: true,
     },
     subject: {
@@ -53,7 +57,16 @@ const EmailTemplateSchema = new Schema<IEmailTemplate>(
       type: Boolean,
       default: false,
     },
+    designMode: {
+      type: String,
+      enum: ['studio', 'visual', 'code', 'custom'],
+      default: 'custom',
+    },
     blocks: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    theme: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
@@ -61,17 +74,21 @@ const EmailTemplateSchema = new Schema<IEmailTemplate>(
   {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
   }
 );
 
 // Add a virtual 'content' field that maps to html
-EmailTemplateSchema.virtual('content').get(function() {
+EmailTemplateSchema.virtual('content').get(function () {
   return this.html;
 });
 
-EmailTemplateSchema.virtual('content').set(function(content: string) {
+EmailTemplateSchema.virtual('content').set(function (content: string) {
   this.html = content;
 });
 
-export default mongoose.models.EmailTemplate || mongoose.model<IEmailTemplate>('EmailTemplate', EmailTemplateSchema); 
+EmailTemplateSchema.index({ userId: 1, createdAt: -1 });
+EmailTemplateSchema.index({ isPublic: 1, createdAt: -1 });
+
+export default mongoose.models.EmailTemplate ||
+  mongoose.model<IEmailTemplate>('EmailTemplate', EmailTemplateSchema);

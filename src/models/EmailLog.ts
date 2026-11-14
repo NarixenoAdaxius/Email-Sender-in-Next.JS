@@ -8,6 +8,7 @@ export interface IEmailLog extends Document {
   userId: mongoose.Types.ObjectId;
   sentAt: Date;
   status: 'sent' | 'delivered' | 'failed' | 'bounced' | 'complained';
+  messageId?: string;
 }
 
 const EmailLogSchema = new Schema<IEmailLog>(
@@ -44,6 +45,10 @@ const EmailLogSchema = new Schema<IEmailLog>(
       enum: ['sent', 'delivered', 'failed', 'bounced', 'complained'],
       default: 'sent',
     },
+    messageId: {
+      type: String,
+      trim: true,
+    },
   },
   { timestamps: true }
 );
@@ -52,6 +57,7 @@ const EmailLogSchema = new Schema<IEmailLog>(
 EmailLogSchema.index({ userId: 1, sentAt: -1 });
 EmailLogSchema.index({ templateId: 1 });
 EmailLogSchema.index({ email: 1 });
+EmailLogSchema.index({ messageId: 1 });
 
 // Check if models already exist to prevent OverwriteModelError
 export const EmailLog = mongoose.models.EmailLog || mongoose.model<IEmailLog>('EmailLog', EmailLogSchema); 

@@ -1,5 +1,18 @@
 import mongoose from 'mongoose';
 
+export type EmailHistoryStatus =
+  | 'success'
+  | 'partial'
+  | 'failed'
+  | 'pending'
+  | 'bounced'
+  | 'complained';
+
+export interface IEmailFailureDetail {
+  recipient: string;
+  error: string;
+}
+
 export interface IEmailHistory {
   userId: mongoose.Types.ObjectId;
   templateId: string;
@@ -7,8 +20,12 @@ export interface IEmailHistory {
   recipients: string[];
   content: string;
   sentAt: Date;
-  status: 'success' | 'failed';
+  status: EmailHistoryStatus;
   errorMessage?: string;
+  succeededCount?: number;
+  failedCount?: number;
+  failedRecipients?: IEmailFailureDetail[];
+  messageIds?: string[];
 }
 
 const emailHistorySchema = new mongoose.Schema<IEmailHistory>(
@@ -26,10 +43,12 @@ const emailHistorySchema = new mongoose.Schema<IEmailHistory>(
       type: String,
       required: true,
     },
-    recipients: [{
-      type: String,
-      required: true,
-    }],
+    recipients: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
     content: {
       type: String,
       required: true,
@@ -40,18 +59,41 @@ const emailHistorySchema = new mongoose.Schema<IEmailHistory>(
     },
     status: {
       type: String,
-      enum: ['success', 'failed'],
+      enum: ['success', 'partial', 'failed', 'pending', 'bounced', 'complained'],
       required: true,
     },
     errorMessage: {
       type: String,
     },
+    succeededCount: {
+      type: Number,
+    },
+    failedCount: {
+      type: Number,
+    },
+    failedRecipients: [
+      {
+        recipient: { type: String, required: true },
+        error: { type: String, required: true },
+      },
+    ],
+    messageIds: [
+      {
+        type: String,
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
 
-const EmailHistory = mongoose.models.EmailHistory || mongoose.model<IEmailHistory>('EmailHistory', emailHistorySchema);
+emailHistorySchema.index({ userId: 1, sentAt: -1 });
+emailHistorySchema.index({ userId: 1, status: 1, sentAt: -1 });
+emailHistorySchema.index({ messageIds: 1 });
 
-export default EmailHistory; 
+const EmailHistory =
+  mongoose.models.EmailHistory ||
+  mongoose.model<IEmailHistory>('EmailHistory', emailHistorySchema);
+
+export default EmailHistory;

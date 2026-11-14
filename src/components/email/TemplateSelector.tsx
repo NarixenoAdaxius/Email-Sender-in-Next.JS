@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { toast } from 'react-toastify';
 import { EmailTemplate } from '@/lib/email-templates';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CalendarCheck, Globe, Lock, Star } from 'lucide-react';
 
 interface TemplateSelectorProps {
@@ -12,94 +14,126 @@ interface TemplateSelectorProps {
   includePredefined?: boolean;
 }
 
-export default function TemplateSelector({ 
-  onSelect, 
+function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof DOMException || err instanceof Error) &&
+    err.name === 'AbortError'
+  );
+}
+
+export default function TemplateSelector({
+  onSelect,
   selectedTemplateId,
-  includePredefined = true
+  includePredefined = true,
 }: TemplateSelectorProps) {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const prefersReducedMotion = Boolean(useReducedMotion());
+  const listAbortControllerRef = useRef<AbortController | null>(null);
+  const selectAbortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    async function fetchTemplates() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const url = `/api/templates${includePredefined ? '' : '?includeDefault=false'}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch templates');
+  const fetchTemplates = useCallback(async () => {
+    listAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    listAbortControllerRef.current = controller;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({ fields: 'summary' });
+      if (!includePredefined) {
+        params.set('includeDefault', 'false');
+      }
+      const url = `/api/templates?${params.toString()}`;
+      const response = await fetch(url, { signal: controller.signal });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch templates';
+        try {
+          const errData = await response.json();
+          errorMessage = errData.error || errorMessage;
+        } catch {
+          // Ignore non-JSON error responses
         }
-        
-        const data = await response.json();
-        setTemplates(data.templates);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load templates');
-        toast.error('Failed to load email templates');
-      } finally {
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      if (!controller.signal.aborted) {
+        setTemplates(Array.isArray(data.templates) ? data.templates : []);
+      }
+    } catch (err: unknown) {
+      if (isAbortError(err) || controller.signal.aborted) {
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'Failed to load templates');
+      toast.error('Failed to load email templates');
+    } finally {
+      if (listAbortControllerRef.current === controller) {
         setIsLoading(false);
       }
     }
-
-    fetchTemplates();
   }, [includePredefined]);
 
+  useEffect(() => {
+    void fetchTemplates();
+    return () => {
+      listAbortControllerRef.current?.abort();
+      selectAbortControllerRef.current?.abort();
+    };
+  }, [fetchTemplates]);
+
   const handleSelectTemplate = async (template: EmailTemplate) => {
-    console.log("Template selected from list:", {
-      id: template.id,
-      name: template.name,
-      hasHtml: !!template.html,
-      hasContent: !!template.content
-    });
-    
-    // For non-predefined templates, ensure we fetch the complete data
-    if (!template.predefined && template.id) {
+    const targetId = template.id || template._id;
+    const needsFullFetch =
+      Boolean(targetId) &&
+      (!template.predefined || (!template.html && !template.content));
+
+    if (needsFullFetch && targetId) {
+      selectAbortControllerRef.current?.abort();
+      const controller = new AbortController();
+      selectAbortControllerRef.current = controller;
+
       try {
-        console.log('Fetching full template data for:', template.id);
-        const response = await fetch(`/api/templates/${template.id}`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Full template data:', {
-            id: data.template.id,
-            name: data.template.name,
-            hasHtml: !!data.template.html,
-            hasContent: !!data.template.content,
-            htmlLength: data.template.html?.length || 0,
-            contentLength: data.template.content?.length || 0
-          });
-          onSelect(data.template);
-        } else {
-          // If fetch fails, use the original template
-          console.error('Failed to fetch full template data, using original template');
+        const response = await fetch(`/api/templates/${encodeURIComponent(targetId)}`, {
+          signal: controller.signal,
+        });
+
+        if (controller.signal.aborted) return;
+
+        if (!response.ok) {
           onSelect(template);
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching full template:', error);
+
+        const data = await response.json();
+        if (!controller.signal.aborted) {
+          onSelect(data.template || template);
+        }
+      } catch (err: unknown) {
+        if (isAbortError(err) || controller.signal.aborted) {
+          return;
+        }
         onSelect(template);
       }
     } else {
-      // For predefined templates, use as-is
       onSelect(template);
     }
   };
 
-  // Helper function to get template ID - handles both predefined templates (id) and custom templates (_id)
-  const getTemplateId = (template: any) => template.id || template._id;
-  
-  // Helper function to check if a template is selected
-  const isTemplateSelected = (template: any) => {
+  const getTemplateId = (template: EmailTemplate) => template.id || template._id || '';
+
+  const isTemplateSelected = (template: EmailTemplate) => {
     const id = getTemplateId(template);
-    return selectedTemplateId === id;
+    return Boolean(selectedTemplateId && selectedTemplateId === id);
   };
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
@@ -108,96 +142,143 @@ export default function TemplateSelector({
   };
 
   if (isLoading) {
-    return <div className="flex justify-center p-6">Loading templates...</div>;
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-44 animate-pulse rounded-xl border border-border bg-card p-5"
+          />
+        ))}
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-red-500">{error}</p>
-        <button 
-          className="mt-2 text-blue-500 underline"
-          onClick={() => window.location.reload()}
+      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-center">
+        <p className="text-sm font-medium text-red-700 dark:text-red-400">{error}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          onClick={fetchTemplates}
         >
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {templates.map((template) => (
-        <div
-          key={getTemplateId(template)}
-          className={`cursor-pointer rounded-lg border p-4 transition-colors hover:border-primary ${
-            isTemplateSelected(template)
-              ? 'border-2 border-primary bg-primary/5'
-              : 'border-gray-200'
-          }`}
-          onClick={() => handleSelectTemplate(template)}
-        >
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-medium">{template.name}</h3>
-            <div className="flex space-x-1">
-              {template.predefined && (
-                <Badge className="bg-blue-500">
-                  <Star className="h-3 w-3 mr-1" />
-                  Built-in
-                </Badge>
-              )}
-              {template.isPublic && !template.predefined && (
-                <Badge className="bg-green-500">
-                  <Globe className="h-3 w-3 mr-1" />
-                  Public
-                </Badge>
-              )}
-              {!template.isPublic && !template.predefined && (
-                <Badge variant="outline">
-                  <Lock className="h-3 w-3 mr-1" />
-                  Private
-                </Badge>
-              )}
-              {template.isOwner === false && !template.predefined && (
-                <Badge variant="secondary">Shared</Badge>
-              )}
+      {templates.map((template, index) => {
+        const id = getTemplateId(template);
+        const selected = isTemplateSelected(template);
+        const variables = Array.isArray(template.variables) ? template.variables : [];
+
+        return (
+          <motion.div
+            key={id || template.name}
+            role="button"
+            tabIndex={0}
+            aria-pressed={selected}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={
+              prefersReducedMotion
+                ? { duration: 0.12 }
+                : {
+                    type: 'spring',
+                    bounce: 0,
+                    duration: 0.35,
+                    delay: Math.min(index * 0.03, 0.2),
+                  }
+            }
+            whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
+            onClick={() => handleSelectTemplate(template)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleSelectTemplate(template);
+              }
+            }}
+            className={`cursor-pointer rounded-xl border p-5 text-left shadow-xs transition-[border-color,box-shadow,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] ${
+              selected
+                ? 'border-[#4F46E5] bg-[#4F46E5]/5 ring-1 ring-[#4F46E5]'
+                : 'border-border bg-card hover:border-[#4F46E5]/50 hover:shadow-md'
+            }`}
+          >
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <h3 className="text-base font-semibold tracking-tight text-foreground">
+                {template.name}
+              </h3>
+              <div className="flex shrink-0 flex-wrap gap-1">
+                {template.predefined && (
+                  <Badge className="border-[#4F46E5]/20 bg-[#4F46E5]/10 text-[#4F46E5] dark:text-[#818CF8]">
+                    <Star className="mr-1 h-3 w-3" />
+                    Built-in
+                  </Badge>
+                )}
+                {template.isPublic && !template.predefined && (
+                  <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                    <Globe className="mr-1 h-3 w-3" />
+                    Public
+                  </Badge>
+                )}
+                {!template.isPublic && !template.predefined && (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    <Lock className="mr-1 h-3 w-3" />
+                    Private
+                  </Badge>
+                )}
+                {template.isOwner === false && !template.predefined && (
+                  <Badge variant="secondary">Shared</Badge>
+                )}
+              </div>
             </div>
-          </div>
-          
-          <p className="mt-1 text-sm text-gray-500">{template.description}</p>
-          
-          {template.createdAt && (
-            <div className="mt-2 text-xs text-gray-400 flex items-center">
-              <CalendarCheck className="h-3 w-3 mr-1" />
-              Created: {formatDate(template.createdAt)}
+
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+              {template.description || template.subject}
+            </p>
+
+            {template.createdAt && (
+              <div className="mt-3 flex items-center text-xs text-muted-foreground">
+                <CalendarCheck className="mr-1.5 h-3.5 w-3.5" />
+                Created: {formatDate(template.createdAt)}
+              </div>
+            )}
+
+            <div className="mt-4 border-t border-border pt-3">
+              <span className="text-xs font-medium text-muted-foreground">Variables</span>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {variables.length > 0 ? (
+                  variables.map((variable) => (
+                    <span
+                      key={`${id}-${variable}`}
+                      className="inline-flex rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-xs text-foreground"
+                    >
+                      {variable}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-muted-foreground">No variables</span>
+                )}
+              </div>
             </div>
-          )}
-          
-          <div className="mt-4">
-            <span className="text-xs text-gray-500">Variables: </span>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {template.variables && template.variables.length > 0 ? (
-                template.variables.map((variable) => (
-                  <span
-                    key={`${getTemplateId(template)}-${variable}`}
-                    className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs"
-                  >
-                    {variable}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-gray-400">No variables</span>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
+          </motion.div>
+        );
+      })}
 
       {templates.length === 0 && (
-        <div className="col-span-full text-center py-8">
-          <p className="text-gray-500">No templates found. Create your first template to get started.</p>
+        <div className="col-span-full rounded-xl border border-dashed border-border bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            No templates found. Create your first template to get started.
+          </p>
         </div>
       )}
     </div>
   );
-} 
+}
